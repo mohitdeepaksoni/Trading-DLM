@@ -1,28 +1,45 @@
 name: shadow-chain
+
 on:
   schedule:
-    - cron: "30 23 * * *"        # 23:30 UTC daily, after the US close; the job itself skips markets with no new bar
-  workflow_dispatch: {}
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   nightly:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install -r requirements-shadow.txt
+        with:
+          python-version: "3.11"
+
+      - name: install runner requirements
+        run: pip install -r requirements-shadow.txt
+
       - name: pull state from the private HF dataset
-        env: { HF_TOKEN: ${{ secrets.HF_TOKEN }} }
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/shadow_sync.py pull
+
       - name: nightly shadow job (signals, chain, ledger, OpenTimestamps, integrity)
         run: bash scripts/nightly.sh
+
       - name: push state back
         if: always()
-        env: { HF_TOKEN: ${{ secrets.HF_TOKEN }} }
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/shadow_sync.py push
-      - uses: actions/upload-artifact@v4
+
+      - name: keep the signal files as a run artifact
         if: always()
-        with: { name: shadow-signals-${{ github.run_id }}, path: runs/signals, retention-days: 90 }
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-signals-${{ github.run_id }}
+          path: runs/signals
+          retention-days: 90
