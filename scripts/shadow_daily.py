@@ -57,6 +57,9 @@ except Exception as e:  # noqa: BLE001
     log(f"NSE flows FAILED {str(e)[:60]}")
 for market, root, key in (("us_stocks_wide", "runs/us_stocks_wide", "primary"), ("us_stocks_wide", "runs/us_stocks_wide", "composite"),
                           ("crypto_full", "runs/crypto_full", "primary"), ("nse", "runs/nse", "primary")):
+    tag = market if key == "primary" else f"{market}-{key}"
+    if os.path.exists(os.path.join(OUT, f"{tag}-{now:%Y-%m-%d}.json")):
+        log(f"{tag}: already published for {now:%Y-%m-%d} — skipped (one file per day; reruns never double-publish)"); continue
     try:
         sig = build_signals(market, root, K=200 if market != "crypto_full" else 100, strategy_key=key)
         rec = publish(sig, OUT, LEDGER)
