@@ -1,0 +1,57 @@
+{
+ "host": "deepsoni-mac",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "cpu_count": 8,
+ "summary": {
+  "store.as_of": {
+   "n": 1,
+   "p50_s": 0.14144866599999983,
+   "p99_s": 0.14144866599999983,
+   "max_s": 0.14144866599999983,
+   "best_rows_per_s": null,
+   "peak_rss_mb": 173.735936
+  },
+  "baseline.har_rv": {
+   "n": 1,
+   "p50_s": 0.07260329200000015,
+   "p99_s": 0.07260329200000015,
+   "max_s": 0.07260329200000015,
+   "best_rows_per_s": 693907.92913357,
+   "peak_rss_mb": 191.93856
+  },
+  "baseline.garch11_t": {
+   "n": 1,
+   "p50_s": 76.14783504200001,
+   "p99_s": 76.14783504200001,
+   "max_s": 76.14783504200001,
+   "best_rows_per_s": 661.6077787662967,
+   "peak_rss_mb": 192.02048
+  }
+ },
+ "records": [
+  {
+   "name": "store.as_of",
+   "wall_s": 0.14144866599999983,
+   "rows": null,
+   "rows_per_s": null,
+   "peak_rss_mb": 173.735936
+  },
+  {
+   "name": "baseline.har_rv",
+   "wall_s": 0.07260329200000015,
+   "rows": 50380,
+   "rows_per_s": 693907.92913357,
+   "peak_rss_mb": 191.93856
+  },
+  {
+   "name": "baseline.garch11_t",
+   "wall_s": 76.14783504200001,
+   "rows": 50380,
+   "rows_per_s": 661.6077787662967,
+   "peak_rss_mb": 192.02048
+  }
+ ],
+ "market": "synthetic",
+ "T": 2519,
+ "N": 20
+}

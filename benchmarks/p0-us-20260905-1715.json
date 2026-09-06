@@ -1,0 +1,859 @@
+{
+ "host": "deepsoni-mac",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "cpu_count": 8,
+ "summary": {
+  "store.append": {
+   "n": 1,
+   "p50_s": 0.029617625000000203,
+   "p99_s": 0.029617625000000203,
+   "max_s": 0.029617625000000203,
+   "best_rows_per_s": 1867401.5894252027,
+   "peak_rss_mb": 191.250432
+  },
+  "store.as_of": {
+   "n": 1,
+   "p50_s": 0.10737108300000031,
+   "p99_s": 0.10737108300000031,
+   "max_s": 0.10737108300000031,
+   "best_rows_per_s": null,
+   "peak_rss_mb": 226.852864
+  },
+  "costs.portfolio_returns": {
+   "n": 80,
+   "p50_s": 0.0005447079999996163,
+   "p99_s": 0.0030739169999982607,
+   "max_s": 0.0030739169999982607,
+   "best_rows_per_s": 115671009.43817565,
+   "peak_rss_mb": 394.100736
+  },
+  "baseline.hrp": {
+   "n": 16,
+   "p50_s": 0.0761486660000017,
+   "p99_s": 0.0848600000000026,
+   "max_s": 0.0848600000000026,
+   "best_rows_per_s": 34382.44484083851,
+   "peak_rss_mb": 394.100736
+  },
+  "pbo.cscv": {
+   "n": 1,
+   "p50_s": 0.00845483300000005,
+   "p99_s": 0.00845483300000005,
+   "max_s": 0.00845483300000005,
+   "best_rows_per_s": 1486132.2512224575,
+   "peak_rss_mb": 231.489536
+  },
+  "cpcv.paths": {
+   "n": 5,
+   "p50_s": 0.256866917,
+   "p99_s": 1.1581385000000015,
+   "max_s": 1.1581385000000015,
+   "best_rows_per_s": 20949.624730780968,
+   "peak_rss_mb": 394.100736
+  },
+  "bootstrap.indices": {
+   "n": 9,
+   "p50_s": 0.07353391600000059,
+   "p99_s": 0.09030541699999972,
+   "max_s": 0.09030541699999972,
+   "best_rows_per_s": 71336777.69135144,
+   "peak_rss_mb": 394.100736
+  }
+ },
+ "records": [
+  {
+   "name": "store.append",
+   "wall_s": 0.029617625000000203,
+   "rows": 55308,
+   "rows_per_s": 1867401.5894252027,
+   "peak_rss_mb": 191.250432
+  },
+  {
+   "name": "store.as_of",
+   "wall_s": 0.10737108300000031,
+   "rows": null,
+   "rows_per_s": null,
+   "peak_rss_mb": 226.852864
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006230000000009284,
+   "rows": 55286,
+   "rows_per_s": 88741573.03357562,
+   "peak_rss_mb": 229.916672
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005117079999994445,
+   "rows": 55286,
+   "rows_per_s": 108042086.50257573,
+   "peak_rss_mb": 229.982208
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006599999999998829,
+   "rows": 55286,
+   "rows_per_s": 83766666.66668153,
+   "peak_rss_mb": 230.227968
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.0752964580000004,
+   "rows": 2513,
+   "rows_per_s": 33374.7438690939,
+   "peak_rss_mb": 230.408192
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005622919999996867,
+   "rows": 55286,
+   "rows_per_s": 98322579.72731394,
+   "peak_rss_mb": 230.457344
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005275840000003029,
+   "rows": 55286,
+   "rows_per_s": 104790895.85728198,
+   "peak_rss_mb": 230.539264
+  },
+  {
+   "name": "pbo.cscv",
+   "wall_s": 0.00845483300000005,
+   "rows": 12565,
+   "rows_per_s": 1486132.2512224575,
+   "peak_rss_mb": 231.489536
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005197499999987087,
+   "rows": 55286,
+   "rows_per_s": 106370370.37063463,
+   "peak_rss_mb": 234.37312
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005126250000007104,
+   "rows": 55286,
+   "rows_per_s": 107848817.36146966,
+   "peak_rss_mb": 234.389504
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005104169999992081,
+   "rows": 55286,
+   "rows_per_s": 108315357.8350364,
+   "peak_rss_mb": 234.405888
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006954589999992322,
+   "rows": 55286,
+   "rows_per_s": 79495699.962271,
+   "peak_rss_mb": 234.405888
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005357080000010228,
+   "rows": 55286,
+   "rows_per_s": 103201744.23360197,
+   "peak_rss_mb": 234.405888
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.000651917000000779,
+   "rows": 55286,
+   "rows_per_s": 84805274.29095104,
+   "peak_rss_mb": 234.405888
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005907920000005618,
+   "rows": 55286,
+   "rows_per_s": 93579466.20798425,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006440830000009612,
+   "rows": 55286,
+   "rows_per_s": 85836763.2741704,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005257500000013238,
+   "rows": 55286,
+   "rows_per_s": 105156443.17614987,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.00047795899999947267,
+   "rows": 55286,
+   "rows_per_s": 115671009.43817565,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005035420000005786,
+   "rows": 55286,
+   "rows_per_s": 109794217.76125224,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.00048045800000018346,
+   "rows": 55286,
+   "rows_per_s": 115069371.30816615,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006039579999992384,
+   "rows": 55286,
+   "rows_per_s": 91539477.91083108,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005447079999996163,
+   "rows": 55286,
+   "rows_per_s": 101496581.65482965,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0004984590000010058,
+   "rows": 55286,
+   "rows_per_s": 110913836.44369635,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "cpcv.paths",
+   "wall_s": 0.11995441600000056,
+   "rows": 2513,
+   "rows_per_s": 20949.624730780968,
+   "peak_rss_mb": 234.422272
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.09030541699999972,
+   "rows": 5026000,
+   "rows_per_s": 55655576.01046254,
+   "peak_rss_mb": 312.590336
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07378291599999898,
+   "rows": 5026000,
+   "rows_per_s": 68118749.87429434,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005767079999987601,
+   "rows": 55286,
+   "rows_per_s": 95864805.06620137,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0004957499999989068,
+   "rows": 55286,
+   "rows_per_s": 111519919.31441636,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0004973340000002935,
+   "rows": 55286,
+   "rows_per_s": 111164730.34211893,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006098340000004754,
+   "rows": 55286,
+   "rows_per_s": 90657457.60314594,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006302919999985335,
+   "rows": 55286,
+   "rows_per_s": 87714900.39557639,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.000515749999999926,
+   "rows": 55286,
+   "rows_per_s": 107195346.58266202,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.000536624999998736,
+   "rows": 55286,
+   "rows_per_s": 103025390.17028692,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005039169999996318,
+   "rows": 55286,
+   "rows_per_s": 109712512.1796653,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005349160000012176,
+   "rows": 55286,
+   "rows_per_s": 103354545.3863301,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006010839999994744,
+   "rows": 55286,
+   "rows_per_s": 91977161.26206711,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005714589999996633,
+   "rows": 55286,
+   "rows_per_s": 96745348.31025948,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0007886670000001317,
+   "rows": 55286,
+   "rows_per_s": 70100562.08766282,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006090839999988162,
+   "rows": 55286,
+   "rows_per_s": 90769089.3211896,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005666660000009927,
+   "rows": 55286,
+   "rows_per_s": 97563644.19235167,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0007071249999999196,
+   "rows": 55286,
+   "rows_per_s": 78184196.57062936,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "cpcv.paths",
+   "wall_s": 0.129517667,
+   "rows": 2513,
+   "rows_per_s": 19402.75838971065,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07357429199999999,
+   "rows": 5026000,
+   "rows_per_s": 68311904.38094872,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005502919999997857,
+   "rows": 55286,
+   "rows_per_s": 100466661.33620247,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006333340000015397,
+   "rows": 55286,
+   "rows_per_s": 87293592.32232217,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005800420000010575,
+   "rows": 55286,
+   "rows_per_s": 95313787.62210184,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.000547917000000453,
+   "rows": 55286,
+   "rows_per_s": 100902143.93777579,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006249170000014459,
+   "rows": 55286,
+   "rows_per_s": 88469348.72930658,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0004980000000003315,
+   "rows": 55286,
+   "rows_per_s": 111016064.25695421,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006199580000014748,
+   "rows": 55286,
+   "rows_per_s": 89177008.76489775,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005087079999999133,
+   "rows": 55286,
+   "rows_per_s": 108679242.31584606,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005324590000004292,
+   "rows": 55286,
+   "rows_per_s": 103831468.71393935,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005213749999999351,
+   "rows": 55286,
+   "rows_per_s": 106038839.60682212,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005478749999987542,
+   "rows": 55286,
+   "rows_per_s": 100909879.07848635,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0007129159999994528,
+   "rows": 55286,
+   "rows_per_s": 77549108.169886,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005538749999995929,
+   "rows": 55286,
+   "rows_per_s": 99816745.65568158,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006487090000000251,
+   "rows": 55286,
+   "rows_per_s": 85224653.88949107,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006591250000003157,
+   "rows": 55286,
+   "rows_per_s": 83877868.38607778,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "cpcv.paths",
+   "wall_s": 0.688225375,
+   "rows": 2513,
+   "rows_per_s": 3651.420147070282,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07353391600000059,
+   "rows": 5026000,
+   "rows_per_s": 68349413.07899283,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07220620800000077,
+   "rows": 5026000,
+   "rows_per_s": 69606203.38904858,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.08058170800000042,
+   "rows": 2513,
+   "rows_per_s": 31185.737586996627,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005407080000026099,
+   "rows": 55286,
+   "rows_per_s": 102247423.7476293,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07635337500000006,
+   "rows": 2513,
+   "rows_per_s": 32912.75598491878,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005017920000014442,
+   "rows": 55286,
+   "rows_per_s": 110177125.1830258,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07714079099999793,
+   "rows": 2513,
+   "rows_per_s": 32576.798441178384,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005010829999996247,
+   "rows": 55286,
+   "rows_per_s": 110333018.68161844,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.0764507089999995,
+   "rows": 2513,
+   "rows_per_s": 32870.85277390974,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005175410000006764,
+   "rows": 55286,
+   "rows_per_s": 106824386.86003186,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07702654100000217,
+   "rows": 2513,
+   "rows_per_s": 32625.11813947259,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.000593499999997249,
+   "rows": 55286,
+   "rows_per_s": 93152485.25738208,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.0767406250000029,
+   "rows": 2513,
+   "rows_per_s": 32746.67101030133,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005304170000002273,
+   "rows": 55286,
+   "rows_per_s": 104231199.22622448,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.0761486660000017,
+   "rows": 2513,
+   "rows_per_s": 33001.234716310646,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005073340000016913,
+   "rows": 55286,
+   "rows_per_s": 108973575.59283568,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.0848600000000026,
+   "rows": 2513,
+   "rows_per_s": 29613.481027573922,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006166249999992601,
+   "rows": 55286,
+   "rows_per_s": 89659031.01571675,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07538795900000039,
+   "rows": 2513,
+   "rows_per_s": 33334.23577629933,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005505830000025469,
+   "rows": 55286,
+   "rows_per_s": 100413561.62421335,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07481562499999939,
+   "rows": 2513,
+   "rows_per_s": 33589.24021553012,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005897919999995338,
+   "rows": 55286,
+   "rows_per_s": 93738131.40911321,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07431162499999999,
+   "rows": 2513,
+   "rows_per_s": 33817.050831548906,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006199579999979221,
+   "rows": 55286,
+   "rows_per_s": 89177008.76540878,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07509037499999849,
+   "rows": 2513,
+   "rows_per_s": 33466.33972729595,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005355840000014211,
+   "rows": 55286,
+   "rows_per_s": 103225637.80817445,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07542804199999864,
+   "rows": 2513,
+   "rows_per_s": 33316.52172543529,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005304580000000669,
+   "rows": 55286,
+   "rows_per_s": 104223143.01979238,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07563391599999747,
+   "rows": 2513,
+   "rows_per_s": 33225.83482256933,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0004952080000002468,
+   "rows": 55286,
+   "rows_per_s": 111641976.70468257,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "baseline.hrp",
+   "wall_s": 0.07308962499999794,
+   "rows": 2513,
+   "rows_per_s": 34382.44484083851,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005057500000020809,
+   "rows": 55286,
+   "rows_per_s": 109314878.89228378,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "cpcv.paths",
+   "wall_s": 1.1581385000000015,
+   "rows": 2513,
+   "rows_per_s": 2169.861376683356,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07348433400000332,
+   "rows": 5026000,
+   "rows_per_s": 68395530.3997145,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07045454200000023,
+   "rows": 5026000,
+   "rows_per_s": 71336777.69135144,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005479999999984386,
+   "rows": 55286,
+   "rows_per_s": 100886861.31415606,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005123329999996429,
+   "rows": 55286,
+   "rows_per_s": 107910284.91242714,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005375000000000796,
+   "rows": 55286,
+   "rows_per_s": 102857674.41858943,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005235829999996611,
+   "rows": 55286,
+   "rows_per_s": 105591663.59495206,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005394580000022131,
+   "rows": 55286,
+   "rows_per_s": 102484345.3981092,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0030739169999982607,
+   "rows": 55286,
+   "rows_per_s": 17985521.404784605,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0009769999999988954,
+   "rows": 55286,
+   "rows_per_s": 56587512.79433215,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0006055829999986884,
+   "rows": 55286,
+   "rows_per_s": 91293844.11405165,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005333749999998361,
+   "rows": 55286,
+   "rows_per_s": 103653152.09752424,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005870839999992938,
+   "rows": 55286,
+   "rows_per_s": 94170510.52330928,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005508749999982854,
+   "rows": 55286,
+   "rows_per_s": 100360335.82967475,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005391250000030823,
+   "rows": 55286,
+   "rows_per_s": 102547646.64907752,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005348329999996793,
+   "rows": 55286,
+   "rows_per_s": 103370584.83682412,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005164999999998088,
+   "rows": 55286,
+   "rows_per_s": 107039690.2226921,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "costs.portfolio_returns",
+   "wall_s": 0.0005192080000000487,
+   "rows": 55286,
+   "rows_per_s": 106481410.14775352,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "cpcv.paths",
+   "wall_s": 0.256866917,
+   "rows": 2513,
+   "rows_per_s": 9783.276216921311,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07150883299999933,
+   "rows": 5026000,
+   "rows_per_s": 70285023.39004815,
+   "peak_rss_mb": 394.100736
+  },
+  {
+   "name": "bootstrap.indices",
+   "wall_s": 0.07364874999999671,
+   "rows": 5026000,
+   "rows_per_s": 68242841.86765185,
+   "peak_rss_mb": 394.100736
+  }
+ ],
+ "market": "us",
+ "T": 2513,
+ "N": 22
+}

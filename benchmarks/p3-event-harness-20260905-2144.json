@@ -1,0 +1,55 @@
+{
+ "host": "deepsoni-mac",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "cpu_count": 8,
+ "summary": {
+  "store.append": {
+   "n": 1,
+   "p50_s": 0.036385291999998515,
+   "p99_s": 0.036385291999998515,
+   "max_s": 0.036385291999998515,
+   "best_rows_per_s": 675272.8547568342,
+   "peak_rss_mb": 235.732992
+  },
+  "store.as_of": {
+   "n": 1,
+   "p50_s": 0.13228820799999852,
+   "p99_s": 0.13228820799999852,
+   "max_s": 0.13228820799999852,
+   "best_rows_per_s": null,
+   "peak_rss_mb": 244.563968
+  },
+  "agora.solve": {
+   "n": 1,
+   "p50_s": 0.9454769580000004,
+   "p99_s": 0.9454769580000004,
+   "max_s": 0.9454769580000004,
+   "best_rows_per_s": 22.211011936686447,
+   "peak_rss_mb": 311.033856
+  }
+ },
+ "records": [
+  {
+   "name": "store.append",
+   "wall_s": 0.036385291999998515,
+   "rows": 24570,
+   "rows_per_s": 675272.8547568342,
+   "peak_rss_mb": 235.732992
+  },
+  {
+   "name": "store.as_of",
+   "wall_s": 0.13228820799999852,
+   "rows": null,
+   "rows_per_s": null,
+   "peak_rss_mb": 244.563968
+  },
+  {
+   "name": "agora.solve",
+   "wall_s": 0.9454769580000004,
+   "rows": 21,
+   "rows_per_s": 22.211011936686447,
+   "peak_rss_mb": 311.033856
+  }
+ ],
+ "n_events": 20
+}

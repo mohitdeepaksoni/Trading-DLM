@@ -1,0 +1,6 @@
+numpy>=2.0
+polars>=1.30
+scipy>=1.13
+requests>=2.32
+huggingface_hub>=0.30
+opentimestamps-client>=0.7.2
