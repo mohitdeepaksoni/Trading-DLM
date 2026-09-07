@@ -5,7 +5,7 @@ Token from HF_TOKEN. State = point-in-time stores (bars/facts/...) + the signal 
 import os, sys, tarfile, tempfile
 from huggingface_hub import HfApi, hf_hub_download
 
-REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data"); PATHS = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/signals"]
+REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data"); PATHS = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt", "runs/signals"]
 tok = os.environ.get("HF_TOKEN"); api = HfApi(token=tok)
 cmd = sys.argv[1] if len(sys.argv) > 1 else "pull"
 if cmd == "pull":
@@ -17,7 +17,7 @@ elif cmd == "push":
     out = os.path.join(tempfile.mkdtemp(), "state.tar")
     with tarfile.open(out, "w") as t:
         for pth in PATHS:
-            if os.path.isdir(pth):
+            if os.path.exists(pth):
                 t.add(pth)
     api.create_repo(REPO, repo_type="dataset", private=True, exist_ok=True)
     api.upload_file(path_or_fileobj=out, path_in_repo="shadow/state.tar", repo_id=REPO, repo_type="dataset", commit_message="shadow chain state")

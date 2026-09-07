@@ -19,7 +19,7 @@ from emporion.evaluate.cpcv import cpcv_splits
 from emporion.structure.industry_map import exposure_matrix
 from p3_event_harness import rank_ic
 from p4_realdata_us_stocks import ttm_eps_asof, shares_asof, sue_asof, accruals_asof
-from p4_realdata_nse import last_known_t, split_adjust
+from emporion.anchors.nse import last_known_t, split_adjust
 
 torch.set_default_dtype(torch.float32)
 FEATS = list(THEMES) + ["value", "sue", "accruals", "holders_change", "inst_level", "agora_shock", "is_us", "is_nse"]

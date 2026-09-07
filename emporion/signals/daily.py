@@ -68,6 +68,14 @@ def build_signals(market: str, root: str, K: int = 200, asof: Optional[dt.dateti
             strategy, primary = "accruals_top20pct (pre-registered 2026-09-06)", "accruals"
     elif market.startswith("crypto"):
         strategy, primary = "low_risk_top20pct (pre-registered 2026-09-06, research track)", "low_risk"
+    elif market == "nse" and "results" in store.tables():
+        from .. import anchors as _a  # noqa: F401
+        from ..anchors.nse import consolidated_first, nse_eps_sue_asof
+        res = consolidated_first(store.all_versions("results")); shh = store.all_versions("shareholding") if "shareholding" in store.tables() else pl.DataFrame({"symbol": [], "event_time": [], "knowledge_time": []})
+        eps, sue_n = nse_eps_sue_asof(res, shh, asof, syms)
+        scores["sue"] = np.where(U, sue_n, np.nan); scores["value"] = np.where(U, value_anchor(eps, P[t]), np.nan)
+        # PRE-REGISTERED 2026-09-07: NSE earnings surprise, top quintile of SUE within the point-in-time top-200; replaces the momentum placeholder
+        strategy, primary = "sue_top20pct (pre-registered 2026-09-07; seasonal EPS surprise / 8-quarter std, split-adjusted, consolidated-first)", "sue"
     else:
         strategy, primary = "value_top20pct (placeholder until NSE fundamentals land)", "momentum"
     s = scores.get(primary, np.full(len(syms), np.nan)); ok = np.isfinite(s)

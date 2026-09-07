@@ -55,6 +55,12 @@ try:
     s.append("flows", fl); log(f"NSE flows snapshot {fl.height} rows")
 except Exception as e:  # noqa: BLE001
     log(f"NSE flows FAILED {str(e)[:60]}")
+if now.weekday() == 6 and os.path.exists("runs/nse/pit_union_all.txt"):        # Sunday: refresh NSE quarterly results + shareholding (cached XBRL travels in the state)
+    try:
+        r = subprocess.run([sys.executable, "scripts/build_nse_fundamentals.py", "--symbols-file", "runs/nse/pit_union_all.txt", "--only", "results,shareholding", "--replace"], capture_output=True, text=True, timeout=2400)
+        log("NSE fundamentals weekly refresh " + ("done" if r.returncode == 0 else f"FAILED rc={r.returncode}: {r.stderr[-200:]}"))
+    except Exception as e:  # noqa: BLE001
+        log(f"NSE fundamentals refresh FAILED {str(e)[:80]}")
 for market, root, key in (("us_stocks_wide", "runs/us_stocks_wide", "primary"), ("us_stocks_wide", "runs/us_stocks_wide", "composite"),
                           ("crypto_full", "runs/crypto_full", "primary"), ("nse", "runs/nse", "primary")):
     tag = market if key == "primary" else f"{market}-{key}"

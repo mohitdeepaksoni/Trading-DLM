@@ -23,33 +23,7 @@ from emporion.anchors import price_themes
 from emporion.structure.embeddings import asset_embeddings, peer_implied_yield
 
 
-def last_known_t(df, asof, col, syms, n=1, days=400, min_n=None):
-    """Like last_known but returns (values, event_times) per symbol."""
-    min_n = n if min_n is None else min_n
-    f = df.filter(pl.col("knowledge_time") <= asof).sort("knowledge_time").group_by(["symbol", "event_time"]).last()
-    f = f.filter(pl.col(col).is_not_null()).sort("event_time").group_by("symbol").agg(pl.col(col).tail(n).alias("v"), pl.col("event_time").tail(n).alias("t"))
-    out = {r["symbol"]: ((list(r["v"]), list(r["t"])) if len(r["v"]) >= min_n and (asof - r["t"][-1]).days < days else None) for r in f.iter_rows(named=True)}
-    return [out.get(s) for s in syms]
-
-
-def split_adjust(eps_vt, shares_vt):
-    """Restate historical per-share figures on the CURRENT share count (splits / bonuses).
-    eps_vt = (eps values, quarter ends); shares_vt = (shares_total values, filing dates) as known at the decision date.
-    Each quarter's EPS is multiplied by shares(at that quarter) / shares(latest); ratios within 2 % of 1 are left alone."""
-    if eps_vt is None:
-        return None
-    v, t = eps_vt
-    if shares_vt is None or len(shares_vt[0]) < 2:
-        return v
-    sv, st = shares_vt; latest = sv[-1]
-    if not latest or latest <= 0:
-        return v
-    out = []
-    for e, q in zip(v, t):
-        prior = [s for s, d in zip(sv, st) if d <= q and s and s > 0]
-        ratio = (prior[-1] / latest) if prior else 1.0
-        out.append(e * ratio if abs(ratio - 1.0) > 0.02 else e)
-    return out
+from emporion.anchors.nse import last_known_t, split_adjust  # noqa: E402  (moved into the package 2026-09-07)
 
 
 def last_known(df, asof, col, syms, n=1, days=400, min_n=None):
