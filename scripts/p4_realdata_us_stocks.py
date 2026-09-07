@@ -105,7 +105,7 @@ def main():
     ap.add_argument("--every", type=int, default=21)
     ap.add_argument("--cost-bps", type=float, default=10.0)
     ap.add_argument("--universe-k", type=int, default=200, help="point-in-time universe: top-K by trailing dollar volume at each decision date")
-    ap.add_argument("--scope-version", default="pit2", help="procedure-family version: pit2 = point-in-time universe + revisions resolved per decision date (2026-09-06)")
+    ap.add_argument("--scope-version", default="pit3", help="procedure-family version: pit2 = point-in-time universe + revisions resolved per decision date (2026-09-06)")
     args = ap.parse_args()
     store = BitemporalStore(os.path.join(args.root, "store")); ledger = Ledger(os.path.join(args.root, "ledger"))
     now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
@@ -166,7 +166,9 @@ def main():
         Pu = np.where(U[None, :] & listed, P, np.nan)
         # --- US holdings state (13F, point-in-time by filing date) ---
         if inst is not None:
-            known = inst.filter(pl.col("knowledge_time") <= asof).sort("knowledge_time").group_by(["cusip", "event_time"]).last()
+            # fullest batch known by asof per (cusip, quarter): SEC quarterly datasets carry late/amended filings for
+            # earlier quarters as small partial batches; "latest wins" corrupted every holdings level (research/03 §15)
+            known = inst.filter(pl.col("knowledge_time") <= asof).sort("n_holders").group_by(["cusip", "event_time"]).last()
             g = known.sort("event_time").group_by("cusip").agg(pl.col("inst_shares").tail(2).alias("sh2"), pl.col("n_holders").tail(2).alias("nh2"), pl.col("event_time").tail(1).alias("t1"))
             rec = {r["cusip"]: r for r in g.iter_rows(named=True) if (asof - r["t1"][0]).days < 200}
             lvl = np.full(N, np.nan); chg = np.full(N, np.nan); hchg = np.full(N, np.nan)

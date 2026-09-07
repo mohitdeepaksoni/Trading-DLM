@@ -122,3 +122,16 @@ percent (14.3); the loader normalises per filing (promoter + public ≤ 1.5 ⇒ 
 institutional-change rung saw a −14-point "sale" in every name in one quarter. (c) `shares_total` (promoter + public
 shares) is now stored and the ladder restates historical EPS on the current share count before seasonal differences
 (`split_adjust`, tests in `tests/test_nse_shareholding_units.py`).
+
+## 15. SEC 13F structured datasets carry late filings for earlier quarters (added 2026-09-07)
+Each quarterly 13F structured dataset from the SEC contains, besides the quarter's own filings, small batches of late
+and amended filings for **earlier** quarters. My bitemporal rule "latest known revision wins" (correct for XBRL
+restatements) therefore replaced a full aggregate (Apple, 2025-Q4: 5,894 holders, 9.5 bn shares) with the late batch
+published five months later (199 holders, 0.4 bn shares). Median institutional share across the top-500 read 0.00
+instead of 0.80. Every holdings-based number produced before this date (institutional level and change, holders
+change, the supply-calibrated clearing rungs of 2026-09-06) was computed on corrupted levels and is superseded by the
+`pit3` scope of the US ladder. **Rule:** per (security, quarter) keep the fullest batch known by the decision date —
+maximum holder count — not the latest; amendments to an aggregate are not restatements of it. Discovered by a sanity
+check on the level (a median institutional share of zero is impossible), not by any statistical test — the
+statistical tests had happily reported "no signal" on garbage. The manager × stock matrices used for asset embeddings
+are built per dataset window and carry the same late batches; treated as a caveat on the embedding rungs until rebuilt.
