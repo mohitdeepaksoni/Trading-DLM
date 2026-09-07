@@ -40,3 +40,13 @@ harness stays an ETF-level sector-rotation instrument (its own product surface);
 model until either (a) more events accumulate (the harness keeps ledgering every dated action) or (b) a holdings-based
 exposure matrix (actual ETF constituents) shows the transfer in a way the industry map cannot. Every number above is
 on the ledger (scopes `p3-event-stocks-us*`, `p3-event-harness-us-drop-*`); no stock-level trial is pre-registered.
+
+## Addendum 2026-09-07 — the ETF-level product surface
+`scripts/event_rotation.py` turns one dated action into a sector-ETF book (long top quartile / short bottom quartile of
+Agora dlogPX mapped through ETF_EXPOSURE, dollar-neutral, day-0 only) in the shadow-signal format, own chain
+(`runs/signals-events/`), ledger scope `p3-event-rotation`. Over the 20 calibration events (all post-hoc by
+construction): day-0 book excess return **+0.37 % per event, t 1.43, positive on 15/20**, mean rank-IC +0.131.
+The long leg contributes little (+0.19 % mean); the short leg does the work (−0.19 % mean), i.e. the model's value is
+in naming the sectors that get hit. Live use is governed by `plan/EVENT-PREREG-RULE.md`: source text hashed and the
+file stamped before 13:30 UTC on the event day; anything later is `post_hoc: true` inside the hash and excluded.
+Nothing is certified until n = 20 live, stamped events.
