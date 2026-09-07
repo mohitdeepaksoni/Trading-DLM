@@ -135,3 +135,13 @@ maximum holder count — not the latest; amendments to an aggregate are not rest
 check on the level (a median institutional share of zero is impossible), not by any statistical test — the
 statistical tests had happily reported "no signal" on garbage. The manager × stock matrices used for asset embeddings
 are built per dataset window and carry the same late batches; treated as a caveat on the embedding rungs until rebuilt.
+
+## 16. Feature coverage must be point-in-time too (added 2026-09-07)
+The NSE fundamentals table was fetched for today's top-200 by traded value. A model over the anchors then learned,
+with a t-statistic of 4 and an 87 % hit rate, that stocks with *missing* SUE underperform — because "missing" meant
+"not in today's top-200", i.e. the names that declined. Same leak as §11, one level down: the universe was point-in-time,
+the *coverage* of a feature was not, and a missing-value indicator turned it into a signal. Found by looking at the ridge
+coefficients, not by any out-of-sample test — the CPCV passed it happily. **Rule:** every feature table is built for the
+union of all point-in-time universes over the sample; a missing indicator is only allowed when missingness is itself
+point-in-time (the filing did not exist by the decision date). Numbers produced before the fix (v2 NSE, 2026-09-07
+morning) are superseded.
