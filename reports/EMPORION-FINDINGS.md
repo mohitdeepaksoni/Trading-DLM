@@ -64,9 +64,20 @@ per-stock institutional share between filings is no better than carrying the las
 way; P3c closed without a rung).
 
 ## 7. Holdings (corrected 2026-09-07)
-Pending the `pit3` rerun: institutional level / change / holders change and the supply-calibrated clearing rungs on
-the corrected 13F aggregates. Result inserted below when the run reports.
-<!-- PIT3 -->
+Rerun on corrected 13F aggregates (scope `p4-realdata-us-stocks-pit3`, 103 monthly dates, 20 rungs, PBO 0.235):
+- Institutional **level** +0.005 (t 0.5) and **change** +0.001 (t 0.1): nothing — now genuinely nothing, rather than
+  nothing on garbage. Holdings are state, not a signal, on US large caps (as the v1 plan assumed).
+- **Holders change** (quarter-on-quarter log change in the number of 13F holders, i.e. breadth of ownership):
+  +0.025 (t 1.5) at 20 days, **+0.036 (t 2.23, hit 0.62) at 60 days**, tilt SR 0.53. The one holdings rung with a
+  pulse; it is a known effect (breadth of ownership), it was on the ladder from the start so it costs no new trial,
+  and it is NOT pre-registered — it goes on the watch list with NSE earnings surprise, nothing more.
+- Supply-calibrated clearing (non-institutional float / institutional block) +0.0168 (t 1.0) at 20 days — identical
+  to the corrupted run to four decimals, which is itself the finding: the clearing correction is too small to reorder
+  US large caps whatever supply it is given; the value anchor sets the ranks.
+- Embedding-peer-value could not run (the manager × stock matrices were not restored on the CPU box) and, being built
+  per dataset window, carries the same late-batch defect; it stays a caveat until rebuilt under the §15 rule.
+Accruals (+0.0187, t 2.05; DSR 1.00 under the fresh count) and the composite (+0.0317, t 1.84; DSR 0.948) are unchanged
+— they never used holdings.
 
 ## 8. What the product is today
 1. Two pre-registered US signals on a live, Bitcoin-stamped chain (day 1 = 2026-09-06), running nightly on GitHub
