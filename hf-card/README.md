@@ -71,59 +71,42 @@ It differs from a backtest in three ways you can check yourself:
 
 ---
 
-## 1. The problem
+## 1–5. The mathematics (summary; the full derivations are in [`MATHEMATICS.md`](MATHEMATICS.md))
 
-Let a market hold N assets with payoff vector D (random, horizon h) and observed prices p. Investors are CARA with
-absolute risk aversion a_k, wealth w_k, beliefs μ (shared, to be identified), covariance Σ, and a mandated
-(price-insensitive) sector holding a fraction φ of supply s. The price-sensitive demand of investor k is
-x_k = (a_k)^{-1} Σ^{-1}(μ − R_f p). Market clearing gives the equilibrium price
+**Clearing.** CARA investors with beliefs $\mu$, covariance $\Sigma$, aggregate risk tolerance $A=\sum_k a_k^{-1}$, a
+mandated sector holding a fraction $\varphi$ of supply $s$; demand $x_k = a_k^{-1}\Sigma^{-1}(\mu - R_f p)$; equilibrium
 
-  p̂ = R_f^{-1} ( μ − κ Σ s ),  κ = (1 − φ) / A,  A = Σ_k a_k^{-1}.
+$$\hat p = R_f^{-1}\big(\mu - \kappa\,\Sigma s\big),\qquad \kappa = \frac{1-\varphi}{A},\qquad \text{signal } -r_{\text{mkt}} = \log(\hat p/p).$$
 
-The engine's object is the equilibrium price p̂ implied by beliefs and state, the signal is −r_mkt = log(p̂ / p),
-and the structural stochastic discount factor is M ∝ exp(−q·D/A) with q = (1−φ)s, whose Gaussian normaliser is
-analytic.
+With leverage caps and extrapolative retail the equilibrium is the Gauss–Newton zero of Scarf's excess demand.
 
-## 2. Identification (what prices can and cannot tell you)
+**Kernel.** $M = e^{-q^\top D/A}/\mathbb{E}[e^{-q^\top D/A}]$, $q=(1-\varphi)s$, normaliser
+$\exp(w^\top\mu + \tfrac12 w^\top\Sigma w)$ analytic; projected onto $\mathbb{E}[M]=1/R_f$; prices the clearing
+equilibrium exactly.
 
-From prices alone the pair (μ, κ) is identified only up to the anchor that fixes the level of μ: any belief shift Δμ
-can be absorbed by a change in κ Σ s. Therefore (research/09):
-- the state is parametrised as κ = (1−φ)/A and **seeded by a structural estimator** — the regression of realised
-  excess payoffs on Σ s across assets over a trailing window;
-- the clearing law is imposed **at the equilibrium price p̂, never at the observed price** (imposing it at p flips the
-  sign of the mispricing signal: −0.50 correlation on synthetic markets, +0.95 when imposed at p̂);
-- beliefs need an **external anchor** — filed fundamentals (earnings yield, seasonal earnings surprise, accruals),
-  measured expectations (consensus), or the general-equilibrium prior — before the law can say anything.
+**Identification.** $R_f p = \mu - \kappa\Sigma s$ identifies $(\mu,\kappa)$ only up to the anchor on $\mu$;
+$(A,\varphi)$ only through $\kappa$. Hence $\kappa$ is seeded by the panel estimator $\hat\kappa = \pi^\top x/x^\top x$
+($\pi$ = realised excess payoffs, $x=\Sigma s$), the law is imposed at $\hat p$ (at $p$ it inverts the signal:
+$-0.50$ vs $+0.95$ correlation with true mispricing), and beliefs come from external anchors.
 
-## 3. The general-equilibrium prior
+**Anchors.** Value $\log\big((e_i/\bar y)/p_i\big)$ with $\bar y$ the median earnings yield; SUE = seasonal EPS difference
+over its 8-quarter std; accruals from XBRL balance-sheet changes; eight replication-study price themes; the
+pre-registered composite $\tfrac14\sum z(\cdot)$ with fixed weights; 13F breadth and level under the fullest-batch rule.
 
-For a dated policy action (a tariff schedule by ISIC sector and partner), Agora's exact open-economy CGE for the USA
-(OECD ICIO-45 anchors, Armington/CET trade, CES/KLEM technology) is solved to residual 10⁻¹⁵ and returns the
-producer-price response Δlog PX per sector. Mapped to sector ETFs through a hand-built exposure table, this is a prior
-on the *cross-section of day-0 reactions* that no price-derived anchor contains.
+**General-equilibrium prior.** Agora's open-economy CGE (Leontief–CES KLEM, Armington $\sigma_q$, CET $\omega_t$, LES
+households, ICIO-45) solved by Newton with homotopy to residual $\le 10^{-9}$ for each dated tariff action; the
+producer-price response $\Delta\log PX$ mapped to ETFs by an exposure table (and to stocks by a validated industry map).
 
-## 4. The honesty stack (the certification mathematics)
+**Deep model.** Fourier features → set Transformer (permutation-equivariant, key-padding mask) → belief corrections
+$\delta_i$ and state $(a,\varphi)$ → exact clearing → loss = law residual at $\hat p$ + LogSumExp tail + penalties on
+$\delta$ and on $\mu-$anchor, residual-adaptive resampling, validation early stopping. v2: ridge / gradient boosting /
+MLP over the anchors with a within-date rank target.
 
-A candidate rule certifies only if all of the following hold on the point-in-time panel with costs inside returns:
-- **Deflated Sharpe ratio** ≥ 0.95, where the null Sharpe distribution's variance is the robust (leave-one-out MAD)
-  variance across the N *distinct procedures* in the scope — N from the ledger's procedure hashes (rung name + calling
-  code + arguments), the strict evaluation count reported alongside;
-- **Probability of backtest overfitting** (CSCV, 16 blocks) across all rungs in the family < 0.20;
-- **Stationary-bootstrap** confidence interval of the excess return over the equal-weight point-in-time universe
-  above zero; **permutation** p-value of the rank-IC below 0.05 where applicable;
-- **Combinatorial purged cross-validation** (6 groups × 2 test, purged by horizon, embargoed) for anything fitted;
-- and, for anything that would go live, **pre-registration**: the rule is frozen in code, the first file hashed and
-  stamped, and the live prints decide.
-
-## 5. The deep model (what was built)
-
-Emporion v0/v1: a permutation-equivariant set encoder over per-asset features → beliefs μ_i and the investor state
-(a, φ); exact CARA clearing to p̂; loss = the clearing residual at p̂ plus penalised departures of μ from its anchor;
-validation early stopping on the residual; κ seeded from the estimator. Trained walk-forward, under CPCV, pooled
-across US + NSE under one law, and with synthetic pre-training on sampled markets with persistent beliefs.
-Emporion v2: ridge, gradient boosting and a 3-seed MLP *over the anchors* (21 features: eight price themes, value,
-SUE, accruals, 13F breadth and level, Agora sector shock, market token) with a within-date rank target, judged on
-identical CPCV splits against the no-fit composite.
+**Honesty stack.** Deflated Sharpe with $\text{SR}_0$ from the expected maximum of $N$ distinct procedures (leave-one-out
+robust variance; $N$ from ledger procedure hashes), PBO by CSCV over 16 blocks across the whole rung family,
+stationary-bootstrap CI vs the equal-weight point-in-time universe, permutation null, CPCV $\binom{6}{2}$ purged and
+embargoed, point-in-time universes and feature coverage, and pre-registration with a SHA-256 hash chain anchored in
+Bitcoin by OpenTimestamps. Formulas and the validator-validation tests: `MATHEMATICS.md` §10.
 
 ## 6. Measured results (all on the ledger; scopes in `docs/EMPORION-FINDINGS.md`)
 
@@ -154,7 +137,7 @@ record, not a claim.
 
 ## 8. What is in this repository
 
-- `README.md` — this card. `docs/` — the research notes 01–12 (models, state of the art, evaluation and overfitting with
+- `README.md` — this card; `MATHEMATICS.md` — every equation, estimator and test. `docs/` — the research notes 01–12 (models, state of the art, evaluation and overfitting with
   the data rules, the unique design, the practical guide, real-time training, the trader-facing design, the review
   response, identification, direction review, stock transfer, pooled result), the findings document, the status
   reports, and the pre-registration rule for events.
@@ -175,7 +158,20 @@ record, not a claim.
 - Costs are a flat 10–15 bp; no market-impact model; books are equal-weight top quintiles, not optimised portfolios.
 - Crypto is rankable by risk but nothing beats equal weight after costs.
 
-## 10. Roadmap
+## 10. Markets — now and next
+
+| market | status | data (all point-in-time) |
+|---|---|---|
+| **US** large caps (top-1000 pool, PIT top-200/500) | live: 2 pre-registered files | Nasdaq bars, SEC XBRL, 13F, Fed Z.1, consensus snapshots |
+| **India / NSE** (PIT top-200 of the full cash market) | live: 1 pre-registered file | NSE bhavcopy, Ind-AS XBRL (legacy + Integrated Filing), shareholding, FII/DII flows |
+| **Crypto** (Coinbase, PIT top-100) | research track file | Coinbase candles, CoinGecko supply |
+| **Europe (Euronext, Xetra, SIX, Nordics) and UK (LSE)** | **next phase** (`docs/PHASE-EU-UK.md`) | fundamentals: ESEF XBRL via filings.xbrl.org (keyless, 2020→, all EU issuers + UK); prices: to be sourced (no keyless daily feed found yet — candidates listed in the plan); Agora anchors for every EU economy and the UK already exist (ICIO-45), so the general-equilibrium prior is ready for EU/UK policy events |
+
+The engine is market-agnostic by construction (a market = a bars store + optional filings stores + a universe rule);
+adding a market is a loader, a universe rule, and the same honesty stack. The order of work is Europe/UK next, then
+Japan if a point-in-time filings source exists.
+
+## 11. Roadmap
 
 Measured beliefs from the accumulating consensus-revision history as an anchor the price cannot see; actual ETF
 constituents for the sector map; twenty stamped live events for the harness; the write-up after the first six
