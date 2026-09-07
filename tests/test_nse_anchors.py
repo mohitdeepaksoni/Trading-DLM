@@ -14,10 +14,10 @@ def test_sue_and_ttm_from_quarterly_eps():
     res = consolidated_first(_res("A", eps)); asof = res["knowledge_time"].max() + dt.timedelta(days=1)
     ttm, sue = nse_eps_sue_asof(res, pl.DataFrame({"symbol": [], "event_time": [], "knowledge_time": []}), asof, ["A", "B"])
     assert ttm[0] == 12.0 and np.isnan(ttm[1]) and np.isnan(sue[0])   # constant seasonal differences -> zero std -> undefined SUE (not a number, never a fake 0)
-    eps = [1, 2, 1, 2, 2, 3, 2, 3, 3, 4, 3, 9]                       # last quarter jumps: SUE large and positive
+    eps = [1, 2, 1, 2, 2, 4, 2, 3, 3, 5, 4, 9]                       # seasonal diffs 1,2,1,1,1,1,2 then 6: SUE large and positive
     res = consolidated_first(_res("A", eps)); asof = res["knowledge_time"].max() + dt.timedelta(days=1)
     ttm, sue = nse_eps_sue_asof(res, pl.DataFrame({"symbol": [], "event_time": [], "knowledge_time": []}), asof, ["A"])
-    assert ttm[0] == 19.0 and sue[0] == 5.0                              # clipped at +5
+    assert ttm[0] == 21.0 and sue[0] == 5.0                              # clipped at +5
 
 
 def test_point_in_time_ignores_unknown_filings():
