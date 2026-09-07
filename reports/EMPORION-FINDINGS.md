@@ -36,8 +36,10 @@ US, point-in-time top-200, monthly dates 2017–2026, honest count (scope `p4-re
   DSR 0.94–0.97 — same single failure. **Pre-registered** 2026-09-06.
 - Value, momentum t ≈ 1–1.5; size, illiquidity, low-risk ≈ 0 once the universe is point-in-time (they had "certified"
   with t 4.8/6.9 under a current-cap universe — the leak the gate cannot see, §11).
-NSE, point-in-time top-200, 38 monthly dates 2022–2026 (scope `p4-realdata-nse`, 33 procedures): **earnings surprise**
-+0.023 (t 1.8), SR 1.43, DSR 0.97, fails only beats-EW; value t 0.8; every holdings rung empty (history from 2021 only).
+NSE, point-in-time top-200, 38 monthly dates 2022–2026 (scope `p4-realdata-nse`): with fundamentals fetched for
+every name that was ever in the universe (research/03 §16), **earnings surprise** +0.035 (t 3.1) at 20 days and
++0.036 (t 4.1, hit 0.76) at 60 days, tilt SR 1.24, fails only beats-EW (CI −0.4 .. +6.5 %/yr); value +0.046 (t 1.7)
+at 60 days; every holdings rung ≈ 0 (history from 2021 only). Not pre-registered as of 2026-09-07.
 Crypto (14 pairs since 2020): rankable by risk, nothing tradeable after costs.
 
 ## 5. Structure: the general-equilibrium prior (Agora)
@@ -62,6 +64,17 @@ not met. **Decision (research/12): the residual-net route is closed at this data
 institutional block — the latter two re-run on corrected 13F levels under scope `pit3`, see §7). A Kalman nowcast of
 per-stock institutional share between filings is no better than carrying the last filing forward (MAE 0.0296 either
 way; P3c closed without a rung).
+
+### 6b. Emporion v2 — a network over the anchors (2026-09-07)
+Ridge, gradient boosting and a 3-seed MLP over 21 features (price themes, value, SUE, accruals, 13F breadth and level,
+Agora sector shock, market token), within-date rank target, pooled US top-500 + NSE top-200, CPCV 6×2, judged on
+identical splits against the no-fit composite (scope `p5-anchor-net`). **US: every fitted model loses to equal
+weights** at every horizon and spacing (h20/21d: +0.016–0.020 vs +0.030; h20/5d: +0.003–0.008 vs +0.025; h60:
++0.007–0.022 vs +0.039). **NSE: an apparent win (+0.08–0.09, t 3–4) was a coverage leak** — fundamentals had been
+fetched for today's top-200 only, so the missing-value indicator encoded "fell out of the index" (research/03 §16);
+on full point-in-time coverage the fitted models fall to +0.02–0.03 while the composite rises to +0.045 (t 2.2).
+Exit line not met. Closed, like v0 and v1: with ~100–600 cross-sections, fitted weights over these anchors do not
+beat 1/N weights — the DeMiguel–Garlappi–Uppal result in the cross-section.
 
 ## 7. Holdings (corrected 2026-09-07)
 Rerun on corrected 13F aggregates (scope `p4-realdata-us-stocks-pit3`, 103 monthly dates, 20 rungs, PBO 0.235):
