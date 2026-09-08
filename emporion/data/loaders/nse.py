@@ -67,8 +67,10 @@ def _one_day(d: dt.date, retries: int = 1, timeout: int = 12):
                 raw = r.read()
             break
         except urllib.error.HTTPError as e:
-            if e.code in (403, 404):
+            if e.code == 404:                       # no session file = holiday
                 return HOLIDAY
+            if e.code == 403:                       # throttling / blocked burst (seen from a cloud IP 2026-09-08): retry, never "holiday"
+                time.sleep(3.0 + 3.0 * i); continue
         except Exception:  # noqa: BLE001
             pass
         time.sleep(1.0 + i)
