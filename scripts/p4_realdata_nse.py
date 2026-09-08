@@ -58,12 +58,20 @@ def main():
     def universe_at(t, K=200):
         hist = listed[max(0, t - 300):t + 1].all(0); med = np.median(dv[t - 250:t + 1], axis=0); med[~hist] = -1
         keep = np.zeros(N, bool); top = np.argsort(-med)[:K]; keep[top] = med[top] > 0; return keep
-    print(f"[panel] NSE {N} stocks x {T} days {dates[0]:%Y-%m-%d}..{dates[-1]:%Y-%m-%d}; results {res.height:,} rows, shareholding {sh.height:,} rows")
+    # delivery percentage (MTO files; known the day after the session): ONE pre-declared rung (plan/PHASES-BY-MARKET.md Phase IN, data step 2)
+    #   delivery_trend = mean(deliv %) over the last 20 known sessions - mean over the 230 sessions before them; published direction: higher = more conviction
+    D = None
+    if "delivery" in store.tables():
+        dl = store.as_of("delivery", now, columns=["deliv_per"]).filter(pl.col("symbol").is_in(syms))
+        dw = dl.pivot(index="event_time", on="symbol", values="deliv_per").sort("event_time")
+        dw = wide.select("event_time").join(dw, on="event_time", how="left")
+        D = dw.select([c if c in dw.columns else pl.lit(None).alias(c) for c in syms]).to_numpy().astype(float)
+    print(f"[panel] NSE {N} stocks x {T} days {dates[0]:%Y-%m-%d}..{dates[-1]:%Y-%m-%d}; results {res.height:,} rows, shareholding {sh.height:,} rows; delivery {'%d sessions' % int(np.isfinite(D).any(1).sum()) if D is not None else 'absent'}")
     res_c = res.filter(pl.col("consolidated")); cons = set(res_c["symbol"].to_list())
     res_use = pl.concat([res_c, res.filter(~pl.col("consolidated") & ~pl.col("symbol").is_in(list(cons)))])
     Rf_d = 1.0 + 0.065 / 252
     dec = list(range(300, T - 61, args.every))
-    names = ("value", "sue", "inst_change", "fpi_level", "clearing_sue_float", "momentum", "st_reversal", "low_risk", "size", "illiquidity", "embedding_peer_value")
+    names = ("value", "sue", "inst_change", "fpi_level", "clearing_sue_float", "momentum", "st_reversal", "low_risk", "size", "illiquidity", "embedding_peer_value") + (("delivery_trend",) if D is not None else ())
     SH_COLS = [c for c in sh.columns if c.startswith("pct_")]
     sig = {k: np.full((T, N), np.nan) for k in names}; kappas = []
     for t in dec:
@@ -76,6 +84,10 @@ def main():
         th = price_themes(Pu, Vm, t)
         for k in ("momentum", "st_reversal", "low_risk", "size", "illiquidity"):
             if k in th: sig[k][t] = np.where(U, th[k], np.nan)
+        if D is not None and t >= 250:
+            with np.errstate(all="ignore"):
+                d20 = np.nanmean(D[t - 20:t], axis=0); d250 = np.nanmean(D[t - 250:t - 20], axis=0)      # rows < t: delivery of day t is known only at t+1
+            sig["delivery_trend"][t] = np.where(U & np.isfinite(d20) & np.isfinite(d250), d20 - d250, np.nan)
         if ok.sum() < 30:
             continue
         ey_med = np.median(eps[ok] / p[ok]); p_fund = np.where(ok, eps / ey_med, np.nan)

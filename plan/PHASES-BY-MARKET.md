@@ -37,7 +37,7 @@ out-of-sample available without waiting. Same replay later for US (2017→) and 
    already reads the file — only the URL/format switch is new). Today 2022→ gives ~45 monthly decision dates; 2016→
    gives ~120. This is the single largest gain available and costs nothing. Exit: `runs/nse/store/bars` 2016→, ladder
    rerun, every NSE number re-quoted on the longer sample under a new scope version (`p4-realdata-nse-v2`).
-2. **Delivery percentage** (in the bhavcopy since 2011: `DELIV_PER`) → a liquidity/conviction state no other market has.
+2. **Delivery percentage** — (done 2026-09-08) NSE MTO files 2016 → 2026 (`loaders/nse_delivery.py`, table `delivery`, 4.5 M rows); rung `delivery_trend`: rank-IC +0.030 (t 3.0) at 60 d over 109 dates, long-only book does not beat EW → watch list; next use: as a state variable in the clearing model.
 3. **Bulk and block deals**, **insider-trading (PIT) and SAST disclosures**, **promoter pledges** — daily, keyless,
    timestamped by NSE broadcast → demand-pressure and insider-belief anchors with a knowledge time.
 4. **AMFI monthly mutual-fund portfolios** → domestic-institution holdings per stock at monthly cadence (13F was quarterly

@@ -44,7 +44,7 @@ names ever in the universe (scope `p4-realdata-nse-N2512`, 75 SUE dates 2020 →
 coverage moves the number by a t-unit either way (§16). Nothing certified. SUE was pre-registered on the chain on 2026-09-07 on
 the old evidence; the file stays and the live record decides. A frozen-clock replay of the live builder over 73 month-ends
 reproduces the ladder (60-session excess over equal weight +0.69 %/month, t 2.1; 2022 → 2026 alone +0.54 %, t 1.6): the
-pipeline is honest, the signal is modest.
+pipeline is honest, the signal is modest. **Delivery percentage** (NSE MTO files, 2016 →), the first India-only state: trend over 20 vs 230 sessions ranks stocks at 60 days (+0.030, t 3.0, hit 0.61, 109 dates) but its long-only book does not beat equal weight — watch list, to be tried as a state inside the clearing model, not as a book.
 Crypto (14 pairs since 2020): rankable by risk, nothing tradeable after costs.
 
 ## 5. Structure: the general-equilibrium prior (Agora)
