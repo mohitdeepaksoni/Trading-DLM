@@ -29,6 +29,10 @@ distribution (months beating EW, worst run, drawdown), not the mean. **Once bars
 entirely** — no one in this project has looked at NSE prices before 2022 — and replay there: the closest thing to true
 out-of-sample available without waiting. Same replay later for US (2017→) and EU/UK.
 **Data (all NSE, keyless, point-in-time):**
+0. (done 2026-09-08) bars 2016→ (legacy archive; NSE blocks bulk downloads from cloud IPs — fetched from the Mac), fundamentals
+   for 387/417 of the 2016–2026 point-in-time union (30 names have no filings on the API). On this sample **SUE falls to
+   t 1.3 / 1.1 (75 dates)** from t 3.1 / 4.1 on 38 dates since 2022 — the longer sample did what a holdout should; the chain file
+   stays and the live record decides.
 1. **Extend bars to 2016** (bhavcopy archives, old `cm…bhav.csv.zip` format before the 2024 UDiFF change; the loader
    already reads the file — only the URL/format switch is new). Today 2022→ gives ~45 monthly decision dates; 2016→
    gives ~120. This is the single largest gain available and costs nothing. Exit: `runs/nse/store/bars` 2016→, ladder
@@ -40,7 +44,12 @@ out-of-sample available without waiting. Same replay later for US (2017→) and 
    with a 45-day lag); FII/DII flows daily (already snapshotting).
 5. **Cost model**: STT 0.1 % delivery, stamp 0.015 %, exchange + SEBI charges, brokerage; slippage from delivery data.
    Replace the 15 bp assumption everywhere in the NSE ladder; the ledger scope changes with it.
-6. **Corporate actions**: splits/bonuses per symbol (already handled via shareholding share counts; verify against the
+6. **Corporate announcements** (NSE `corporate-announcements` feed, keyless, broadcast-timestamped): deterministic event
+   CATEGORIES (results date, order win, fund raise, board meeting, pledge, rating action, …) as state variables — never text
+   sentiment on history (research/06 quarantine: no language-model labels on the past; live labelling only after the stamp).
+   This is the project's answer to "does the engine know about news": policy news → Agora shocks; analyst beliefs → consensus
+   snapshots; company news → timestamped categories. No sentiment model (research/02: none survives honest evaluation).
+7. **Corporate actions**: splits/bonuses per symbol (already handled via shareholding share counts; verify against the
    NSE corporate-actions endpoint) — the open item from research/03 §14.
 **Anchors and rungs** (each a ledgered rung, no more than one new procedure per data source): SUE (pre-registered — the
 chain decides, nothing changes), value, accruals (quarterly!), earnings growth, holdings change (SEBI format), MF-holdings

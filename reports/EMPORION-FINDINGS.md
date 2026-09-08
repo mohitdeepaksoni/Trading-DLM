@@ -36,10 +36,15 @@ US, point-in-time top-200, monthly dates 2017–2026, honest count (scope `p4-re
   DSR 0.94–0.97 — same single failure. **Pre-registered** 2026-09-06.
 - Value, momentum t ≈ 1–1.5; size, illiquidity, low-risk ≈ 0 once the universe is point-in-time (they had "certified"
   with t 4.8/6.9 under a current-cap universe — the leak the gate cannot see, §11).
-NSE, point-in-time top-200, 38 monthly dates 2022–2026 (scope `p4-realdata-nse`): with fundamentals fetched for
-every name that was ever in the universe (research/03 §16), **earnings surprise** +0.035 (t 3.1) at 20 days and
-+0.036 (t 4.1, hit 0.76) at 60 days, tilt SR 1.24, fails only beats-EW (CI −0.4 .. +6.5 %/yr); value +0.046 (t 1.7)
-at 60 days; every holdings rung ≈ 0 (history from 2021 only). Not pre-registered as of 2026-09-07.
+NSE, point-in-time top-200. **Superseded 2026-09-08** by the run on bars 2016 → 2026 with fundamentals for 387 of the 417
+names ever in the universe (scope `p4-realdata-nse-N2512`, 75 SUE dates 2020 → 2026): **earnings surprise +0.016 (t 1.3) at
+20 days, +0.014 (t 1.1, hit 0.69) at 60 days**; value +0.020 (t 1.0); low-risk +0.046 (t 2.2) and momentum +0.033 (t 1.9) at
+60 days; clearing with SUE beliefs +0.033 (t 2.2, 52 dates). The earlier 38-date sample since 2022 had read +0.035 (t 3.1) /
++0.036 (t 4.1) — the longer sample removed most of it, and an intermediate run with 175/417 names covered read t 0.4 / 1.8:
+coverage moves the number by a t-unit either way (§16). Nothing certified. SUE was pre-registered on the chain on 2026-09-07 on
+the old evidence; the file stays and the live record decides. A frozen-clock replay of the live builder over 73 month-ends
+reproduces the ladder (60-session excess over equal weight +0.69 %/month, t 2.1; 2022 → 2026 alone +0.54 %, t 1.6): the
+pipeline is honest, the signal is modest.
 Crypto (14 pairs since 2020): rankable by risk, nothing tradeable after costs.
 
 ## 5. Structure: the general-equilibrium prior (Agora)
