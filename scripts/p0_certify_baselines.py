@@ -36,6 +36,8 @@ def load_market(market: str, store: BitemporalStore) -> pl.DataFrame:
         bars = get("loader", "binance")()
     elif market == "nse":
         bars = get("loader", "nse")(start="2022-01-01", end=dt.date.today().isoformat())
+    elif market == "eu_uk":
+        raise RuntimeError("eu_uk bars are built by scripts/build_euuk_panel.py (ESEF issuers -> Yahoo); run with --reuse-store")
     else:
         bars = get("loader", "synthetic")(n_assets=20, n_days=2520, seed=0)
     store.register_table("bars", ["symbol"])
@@ -46,14 +48,18 @@ def load_market(market: str, store: BitemporalStore) -> pl.DataFrame:
 
 
 def returns_panel(store: BitemporalStore, as_of: dt.datetime, min_history: int = 1500,
-                  min_coverage: float = 0.97, top_n: int = 200, min_date_coverage: float = 0.98, start=None):
+                  min_coverage: float = 0.97, top_n: int = 200, min_date_coverage: float = 0.98, start=None, symbols=None, tv_scale=None):
     """Point-in-time panel of simple returns.
     Universe: symbols with >= min_coverage of all sessions, then the top_n by median traded value.
     Dates: sessions where >= min_date_coverage of the universe has a bar; the few remaining gaps
     are forward-filled (flat return) — documented, and rare by construction."""
     bars = store.as_of("bars", as_of, columns=["close", "volume"], event_start=start)
+    if symbols is not None:                                          # e.g. one primary line per issuer (EU/UK)
+        bars = bars.filter(pl.col("symbol").is_in(list(symbols)))
     n_sessions = bars["event_time"].n_unique()
     cov = bars.group_by("symbol").agg(pl.len().alias("n"), (pl.col("close") * pl.col("volume")).median().alias("tv"))
+    if tv_scale:                                                     # traded value into one currency for the ranking (static FX; mixed-currency panels)
+        cov = cov.with_columns((pl.col("tv") * pl.col("symbol").replace_strict(tv_scale, default=1.0, return_dtype=pl.Float64)).alias("tv"))
     keep = cov.filter((pl.col("n") >= max(min_history, int(min_coverage * n_sessions)))).sort("tv", descending=True)
     keep = keep.head(top_n)["symbol"].to_list()
     wide = (bars.filter(pl.col("symbol").is_in(keep))
@@ -70,7 +76,7 @@ def returns_panel(store: BitemporalStore, as_of: dt.datetime, min_history: int =
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--market", default="synthetic", choices=["us", "crypto", "crypto_full", "nse", "synthetic", "us_stocks", "us_sectors"])
+    ap.add_argument("--market", default="synthetic", choices=["us", "crypto", "crypto_full", "nse", "synthetic", "us_stocks", "us_sectors", "eu_uk"])
     ap.add_argument("--root", default=os.environ.get("EMPORION_ROOT", "runs"))
     ap.add_argument("--cost-bps", type=float, default=10.0)
     ap.add_argument("--periods", type=int, default=None)
@@ -95,7 +101,12 @@ def main():
             load_market("synthetic", store)
 
     start = dt.datetime.fromisoformat(args.start) if args.start else None
-    R, syms, dates = returns_panel(store, now, min_history=1000 if args.market != "synthetic" else 100, top_n=args.top_n, start=start)
+    symbols = tv_scale = None
+    if args.market == "eu_uk":                                       # primary line per ESEF issuer; traded value in EUR for the ranking (static FX)
+        from p4_realdata_euuk import FX_EUR, PRICE_CCY
+        uni = store.as_of("universe", now).filter(pl.col("primary") == True)  # noqa: E712
+        symbols = uni["symbol"].to_list(); tv_scale = {r["symbol"]: FX_EUR.get(PRICE_CCY.get(r["exchange"], "EUR"), 1.0) for r in uni.iter_rows(named=True)}
+    R, syms, dates = returns_panel(store, now, min_history=1000 if args.market != "synthetic" else 100, top_n=args.top_n, start=start, symbols=symbols, tv_scale=tv_scale)
     T, N = R.shape
     scope = f"p0-baselines-{args.market}-N{N}"      # DSR deflates within one (market, universe) family
     print(f"[panel] T={T} days x N={N} assets  {dates[0]:%Y-%m-%d}..{dates[-1]:%Y-%m-%d}")

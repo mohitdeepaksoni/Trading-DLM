@@ -165,7 +165,7 @@ record, not a claim.
 | **US** large caps (top-1000 pool, PIT top-200/500) | live: 2 pre-registered files | Nasdaq bars, SEC XBRL, 13F, Fed Z.1, consensus snapshots |
 | **India / NSE** (PIT top-200 of the full cash market) | live: 1 pre-registered file | NSE bhavcopy, Ind-AS XBRL (legacy + Integrated Filing), shareholding, FII/DII flows |
 | **Crypto** (Coinbase, PIT top-100) | research track file | Coinbase candles, CoinGecko supply |
-| **Europe (Euronext, Xetra, SIX, Nordics) and UK (LSE)** | **next phase** (`docs/PHASE-EU-UK.md`) | fundamentals: ESEF XBRL via filings.xbrl.org (keyless, 2020→, all EU issuers + UK); prices: to be sourced (no keyless daily feed found yet — candidates listed in the plan); Agora anchors for every EU economy and the UK already exist (ICIO-45), so the general-equilibrium prior is ready for EU/UK policy events |
+| **Europe (Euronext, Nasdaq Nordic, Borsa Italiana, BME, Oslo, Vienna) and UK (LSE)** | **data built 2026-09-08; first-pass ladder run, nothing certified or pre-registered** (`docs/PHASE-EU-UK.md`) | fundamentals: ESEF/UKSEF XBRL via filings.xbrl.org (keyless, FY2020→, 12 countries, 2,972 issuers; Germany/Ireland not mirrored); prices: Yahoo daily bars (research source only) for 2,018 issuers since 2016; STOXX 600 sector ETFs for the Agora event harness. First pass: value ranks stocks (+0.08 rank-IC, t 2.9 at 60 d, 52 dates, fails PBO); accruals flips sign vs the US; 9 EU trade events show no day-0 effect |
 
 The engine is market-agnostic by construction (a market = a bars store + optional filings stores + a universe rule);
 adding a market is a loader, a universe rule, and the same honesty stack. The order of work is Europe/UK next, then

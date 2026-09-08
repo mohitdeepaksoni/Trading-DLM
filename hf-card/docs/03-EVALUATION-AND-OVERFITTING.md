@@ -145,3 +145,30 @@ coefficients, not by any out-of-sample test — the CPCV passed it happily. **Ru
 union of all point-in-time universes over the sample; a missing indicator is only allowed when missingness is itself
 point-in-time (the filing did not exist by the decision date). Numbers produced before the fix (v2 NSE, 2026-09-07
 morning) are superseded.
+
+## 17. ESEF xBRL-JSON and 13F matrices: four more rules found by sanity checks (added 2026-09-08)
+Europe/UK fundamentals come from filings.xbrl.org (ESEF/UKSEF, xBRL-JSON). Before any number from them is trusted:
+1. **A filing carries the current period and its comparatives.** The first parser took the *earliest* period end among the
+   contexts and returned last year's numbers (CANAL+ FY2025 file: diluted EPS −0.15 = FY2024, the current year is −0.05).
+   Rule: the reporting period is the latest period end among the core concepts (profit, revenue, EPS) and the longest
+   duration ≤ 400 days ending there; comparatives are stored beside it (`*_prior`, same period one year earlier — for
+   half-year filers the comparative is the prior year's half, not the preceding half). Test: `tests/test_esef_facts.py`.
+2. **OIM period ends and instants are exclusive midnight stamps.** `2025-01-01T00:00:00/2026-01-01T00:00:00` is the year that
+   ends on 2025-12-31 and the balance-sheet instant `2026-01-01T00:00:00` is 2025-12-31. Stored `event_time` is the inclusive
+   date; without the shift every annual period lands one day into the next year and no instant matches its duration.
+3. **Only facts whose dimensions are exactly {concept, entity, period, unit} are consolidated totals.** Anything carrying an
+   explicit axis (components of equity, segments, …) is a breakdown; a segment's revenue can exceed the total. The filing
+   index's own `period_end` is not trusted either (9 of 25k filings say 2026-12-31 .. 2032-12-31; their knowledge time is
+   unrecoverable and they are dropped, logged). knowledge_time = the OAM's `date_added` (median 155 days after period end).
+4. **UK per-share figures: pence or pounds is a per-filing question.** Reported EPS is stored beside `implied_eps` =
+   profit to owners / shares where shares are tagged (rare: 3 % of filings tag shares outstanding), and the ladder resolves
+   the unit per (line, date) from the earnings yield's plausibility (a 100× error puts the yield outside 0.2 %–50 %); every
+   fix is counted and printed, none is silent. LSE prices from Yahoo are in pence.
+Same day, US: the manager × stock **13F matrices carry the §15 late-batch defect** too — each dataset window contains
+partial batches for earlier quarters; concatenating every window's rows for a quarter added 45 % duplicate/late rows on
+average (78 of 98 quarters appear in more than one window). Rule: the matrix for quarter P is the single window whose
+rows for P are the fullest. The embedding rung is re-quoted under scope `pit3` with this rule.
+Coverage rule (§16) applied by construction: the ESEF facts table holds every filing of every regulated-market issuer
+of the 12 countries (12,777 filings, 3,040 issuers), not today's index constituents; issuers gone before FY2020 are absent
+and every EU/UK report says so. Germany, Ireland, Spain (partly) and Portugal (7 issuers) are missing from
+filings.xbrl.org; Germany needs another source before a DE panel exists.

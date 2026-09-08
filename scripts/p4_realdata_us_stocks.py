@@ -198,8 +198,12 @@ def main():
                     globals()["_mcache"] = {}
                 key = per.strftime("%Y-%m-%d")
                 if key not in _mcache:
+                    # research/03 §15 for the manager x stock matrices (2026-09-08): each SEC dataset window carries late/amended
+                    # batches for EARLIER quarters; concatenating every window's rows for period P mixes the full batch with them
+                    # (+45 % rows on average). Rule: the matrix for P is the single window whose rows for P are the fullest.
                     mats = [pl.scan_parquet(f).filter(pl.col("period") == per).collect() for f in mfiles]
-                    _mcache[key] = pl.concat([m for m in mats if m.height]) if any(m.height for m in mats) else None
+                    mats = [m for m in mats if m.height]
+                    _mcache[key] = max(mats, key=lambda m: m.height) if mats else None
                 M = _mcache[key].filter(pl.col("filed") <= asof) if _mcache[key] is not None else pl.DataFrame()
                 if M.height:
                     topm = M.group_by("CIK").agg(pl.col("value").sum().alias("v")).sort("v", descending=True).head(300)["CIK"].to_list()

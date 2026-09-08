@@ -1,4 +1,4 @@
-# Emporion — what was tried, what survived, what did not (findings as of 2026-09-07)
+# Emporion — what was tried, what survived, what did not (findings as of 2026-09-08)
 
 Emporion is a deep-learning trading engine built in the open with one rule: every number that could recommend a trade
 must survive a fixed honesty stack, and every trial — including the failures — stays on an append-only ledger. This
@@ -87,10 +87,27 @@ Rerun on corrected 13F aggregates (scope `p4-realdata-us-stocks-pit3`, 103 month
 - Supply-calibrated clearing (non-institutional float / institutional block) +0.0168 (t 1.0) at 20 days — identical
   to the corrupted run to four decimals, which is itself the finding: the clearing correction is too small to reorder
   US large caps whatever supply it is given; the value anchor sets the ranks.
-- Embedding-peer-value could not run (the manager × stock matrices were not restored on the CPU box) and, being built
-  per dataset window, carries the same late-batch defect; it stays a caveat until rebuilt under the §15 rule.
+- **Embedding-peer-value, re-quoted 2026-09-08 under the §15 rule for the matrices** (one window per quarter — the fullest;
+  concatenating windows had added 45 % late/duplicate rows): −0.015 (t −1.2) at 20 days, −0.014 (t −1.1) at 60 days, not
+  certified. Peer-implied value from 13F co-ownership carries nothing on US large caps. The caveat is closed as a negative.
 Accruals (+0.0187, t 2.05; DSR 1.00 under the fresh count) and the composite (+0.0317, t 1.84; DSR 0.948) are unchanged
 — they never used holdings.
+
+## 7b. Europe and the UK — first pass (2026-09-08)
+Data built in one day, all keyless: ESEF/UKSEF facts for 12 countries (12,486 filings, 2,972 issuers, FY2020→; four parser
+rules in research/03 §17; Germany and Ireland are not on filings.xbrl.org), and Yahoo daily bars for 2,018 of the 3,040
+issuers (2,805 lines, 5.7 M bars since 2016; a research source — no EU/UK file can join the chain until a licensed feed
+exists; the Twelve Data free plan covers no European exchange). Ladder `p4-realdata-euuk` (PIT top-200 by EUR traded
+value, 15/20 bp + 50 bp UK stamp, static FX, dividend-unadjusted, fundamentals from 2021 so 52 monthly dates):
+- **Value** (annual EPS in the price currency, pence/pounds resolved per line): rank-IC **+0.063 (t 2.4)** at 20 d,
+  **+0.080 (t 2.9, hit 0.77)** at 60 d, tilt SR 0.64, beats EW with a CI above zero (+0.5..+5.5 %/yr), fails only PBO
+  (0.316 across the 10-rung ladder). Same shape as US accruals on 2026-09-06. Not pre-registered; 52 dates.
+- **Accruals** flips sign (−0.052, t −2.6 at 60 d) — the US winner is a loser here with annual statements and a
+  4–10-month lag; not a result, a question for the next pass. Earnings growth +0.02 (t 1.3); annual SUE too thin (16 dates).
+- Momentum +0.041 (t 2.4) at 60 d; size, illiquidity, low-risk ≈ 0 or negative; composite +0.033 (t 2.0).
+- P0: EW SR 0.46 (mdd −54 %), momentum-top 0.68; nothing certified.
+Agora on 9 European trade events (STOXX supersector ETFs, per-economy solves): no day-0 effect (+0.05, t 0.6); the 5-day
+reaction window +0.108 (t 1.1, permutation p 0.09, 9 events) — not evidence either way. Scope `p3-event-harness-eu`.
 
 ## 8. What the product is today
 1. Two pre-registered US signals on a live, Bitcoin-stamped chain (day 1 = 2026-09-06), running nightly on GitHub
