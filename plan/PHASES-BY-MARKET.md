@@ -18,6 +18,16 @@ the combination step below is therefore at the *portfolio* level first, and at t
 beliefs (consensus revisions, now accumulating) ever identify something prices alone did not.
 
 ## 1. Phase IN — India engine (now → ~3 weeks of build, then the 7-clean-nights and paper-trading clocks)
+**Task 0 — frozen-clock replay (user, 2026-09-08: "use old data and check our prediction with the latest"; ~1 day).**
+Run the exact nightly builder (`emporion/signals/daily.py`, the code the chain executes) with the clock frozen at every
+month-end from 2023-01 on, reading the bitemporal store `as_of` that date only, emit the files, then score each at 20 and
+60 sessions against the equal-weight universe under the Indian cost model; ledger scope `replay-nse` marked *rehearsal*.
+What it proves: research ↔ live parity (RT1) and the point-in-time machinery end to end — the replay must reproduce the
+research rank-ICs; a gap is a leak. What it does not prove: the signal itself — SUE was chosen after seeing 2022–2026, so
+these years stay in-sample at the level of the choice; only the live chain is selection-free evidence. Report the
+distribution (months beating EW, worst run, drawdown), not the mean. **Once bars reach 2016, hold 2016–2019 out
+entirely** — no one in this project has looked at NSE prices before 2022 — and replay there: the closest thing to true
+out-of-sample available without waiting. Same replay later for US (2017→) and EU/UK.
 **Data (all NSE, keyless, point-in-time):**
 1. **Extend bars to 2016** (bhavcopy archives, old `cm…bhav.csv.zip` format before the 2024 UDiFF change; the loader
    already reads the file — only the URL/format switch is new). Today 2022→ gives ~45 monthly decision dates; 2016→
@@ -39,7 +49,7 @@ change (monthly), delivery-percentage change, insider net buying, pledge change,
 (day-0 harness as for the US; `emporion/structure/events_in.py`, `sector_map_in.py`).
 **Trader path**: 7 clean nights → NSE file is "live" on the chain (already 1); 3 months of paper via Kite paper/sandbox with
 implementation shortfall measured; micro-live only after certification (research/05 staged path, kill-switch rules).
-**Exit criteria**: bars 2016→; ≥ 6 India-specific rungs on the ledger; cost model in every number; India event harness
+**Exit criteria**: replay reproduces the research numbers through the live path and the 2016–2019 holdout is reported; bars 2016→; ≥ 6 India-specific rungs on the ledger; cost model in every number; India event harness
 with ≥ 10 dated events; the daily NSE file unchanged and green for 30 nights; a paper-trading log with shortfall.
 
 ## 2. Phase EU — Europe/UK engine (after IN; gated on two purchases)
