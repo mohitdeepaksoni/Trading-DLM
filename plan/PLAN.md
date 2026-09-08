@@ -1,4 +1,4 @@
-# Emporion — build plan (v0.1, 2026-09-05; status per phase in the table and in reports/STATUS-*.md)
+# Emporion — build plan (v0.1, 2026-09-05; status per phase in the table and in reports/STATUS-*.md; **market order since 2026-09-08: plan/PHASES-BY-MARKET.md**)
 
 Goal: an open, equilibrium-anchored, honestly-evaluated DL trading engine for any market, reusing Agora (`../../Mathemetics-DLM/agora`). Phases are gated; each ends with a ledger-backed report.
 
