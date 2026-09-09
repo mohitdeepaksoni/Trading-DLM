@@ -2,7 +2,7 @@
 (plan/PHASES-BY-MARKET.md §1 data steps 3, 6): every row carries the NSE broadcast time as knowledge_time.
   sast          Reg 29 (SAST) acquisition / sale disclosures, history 2016 →  (date-range endpoint)
   announcements corporate announcements with NSE's category (`desc`), history 2016 → (date-range endpoint; ~100k rows / year)
-  insider       PIT (insider trading) disclosures, per symbol (the date-range form of the endpoint returns nothing)
+  insider       PIT (insider trading) disclosures, per symbol WITH a date range (without dates the endpoint caps at the latest 20 rows)
   pledge        promoter pledge snapshot (current only — accumulate nightly; company NAME, no symbol in the feed)
   largedeals    today's bulk + block deals snapshot (the historical endpoint answers 503 — accumulate nightly)
 Probed from the box on 2026-09-09: SAST 712 rows in Q1-2016, announcements 12k rows in Q1-2016, pledge/largedeals current only.
@@ -115,13 +115,16 @@ def load_announcements(start: str, end: str, session: Optional[NseSession] = Non
 
 
 @register("loader", "nse_insider")
-def load_insider(symbols: List[str], session: Optional[NseSession] = None, log=print) -> pl.DataFrame:
-    """PIT disclosures per symbol (the endpoint's date-range form returns nothing): transaction window -> event_time, intimation broadcast -> knowledge_time."""
+def load_insider(symbols: List[str], start: str = "2016-01-01", end: Optional[str] = None, session: Optional[NseSession] = None, log=print) -> pl.DataFrame:
+    """PIT disclosures per symbol. Without dates the endpoint returns only the latest 20 rows; with symbol + from_date/to_date it returns the
+    complete window (verified 2026-09-09: one 2016-2026 window == the sum of eleven yearly windows for RELIANCE 2,348 and TCS 153).
+    Transaction window -> event_time, intimation broadcast -> knowledge_time."""
     s = session or NseSession(); rows = []; n0 = 0
+    a = _d(dt.date.fromisoformat(start)); b = _d(dt.date.fromisoformat(end) if end else dt.date.today())
     for i, sym in enumerate(symbols):
         base = sym.replace(".NS", "")
         try:
-            data = _rows(s.get(f"https://www.nseindia.com/api/corporates-pit?index=equities&symbol={base}"))
+            data = _rows(s.get(f"https://www.nseindia.com/api/corporates-pit?index=equities&symbol={base}&from_date={a}&to_date={b}"))
         except RuntimeError as e:
             log(f"[nse_insider] {base}: {str(e)[:60]}"); continue
         for r in data:

@@ -40,7 +40,11 @@ for src in [x.strip() for x in args.sources.split(",") if x.strip()]:
         log(f"[{src}] done: +{total:,} rows")
     elif src == "insider":
         syms = [l.strip() for l in open(args.symbols_file) if l.strip()]
-        df = get("loader", "nse_insider")(syms, session=sess, log=log)
+        import shutil
+        d = os.path.join(args.root, "store", "insider")
+        if os.path.isdir(d) and any(f.endswith(".parquet") for f in os.listdir(d)):
+            shutil.move(d, d + f".bak-{now:%Y%m%d%H%M}"); store.register_table("insider", KEYS["insider"]); log("[insider] previous table moved aside (rebuild)")
+        df = get("loader", "nse_insider")(syms, start=args.start, end=args.end, session=sess, log=log)
         if df.height:
             h = store.append("insider", df); log(f"[insider] {df.height:,} rows, {df['symbol'].n_unique()} symbols, {df['event_time'].min():%Y-%m-%d}..{df['event_time'].max():%Y-%m-%d} hash={h[:10]}")
     else:

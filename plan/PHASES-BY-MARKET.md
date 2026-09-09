@@ -38,12 +38,17 @@ out-of-sample available without waiting. Same replay later for US (2017→) and 
    gives ~120. This is the single largest gain available and costs nothing. Exit: `runs/nse/store/bars` 2016→, ladder
    rerun, every NSE number re-quoted on the longer sample under a new scope version (`p4-realdata-nse-v2`).
 2. **Delivery percentage** — (done 2026-09-08) NSE MTO files 2016 → 2026 (`loaders/nse_delivery.py`, table `delivery`, 4.5 M rows); rung `delivery_trend`: rank-IC +0.030 (t 3.0) at 60 d over 109 dates, long-only book does not beat EW → watch list; next use: as a state variable in the clearing model.
-3. **Bulk and block deals**, **insider-trading (PIT) and SAST disclosures**, **promoter pledges** — daily, keyless,
-   timestamped by NSE broadcast → demand-pressure and insider-belief anchors with a knowledge time.
+3. **Bulk and block deals**, **insider-trading (PIT) and SAST disclosures**, **promoter pledges** — (loaders done 2026-09-09,
+   `loaders/nse_events.py`, tables `sast` 2016 → (49,746 rows), `announcements` 2016 →, `insider` per symbol of the union, `pledge` and
+   `largedeals` as nightly snapshots — the historical bulk-deal endpoint answers 503 and pledges have no history, so those two
+   accumulate from today). Rungs run 2026-09-09 (109 / 52 dates): `sast_promoter_net` −0.027 (t −2.5) at 60 d — opposite to the declared sign; `insider_net_buy` −0.016 (t −1.9),
+   same direction (72 % of PIT rows are ESOP allotments → `insider_promoter_net`, promoters/directors only, pre-declared for the next run);
+   `announcement_intensity` nothing. Pledge lacks a symbol in the feed (name → symbol map pending). Insider `event_time` has a few typo dates; knowledge_time is clean.
 4. **AMFI monthly mutual-fund portfolios** → domestic-institution holdings per stock at monthly cadence (13F was quarterly
    with a 45-day lag); FII/DII flows daily (already snapshotting).
-5. **Cost model**: STT 0.1 % delivery, stamp 0.015 %, exchange + SEBI charges, brokerage; slippage from delivery data.
-   Replace the 15 bp assumption everywhere in the NSE ladder; the ledger scope changes with it.
+5. **Cost model** — (done 2026-09-09) `emporion/evaluate/costs_in.py`: STT 10 bp each side, stamp 1.5 bp on buys, exchange + GST 0.35 bp,
+   SEBI 0.01 bp, slippage 5 bp default (round trip ≈ 33 bp vs the flat 30 bp used before); the NSE ladder charges it per asset with the
+   buy-side tax (`portfolio_returns_vec`), scope suffix `-incost`. Slippage from delivery data is the open refinement.
 6. **Corporate announcements** (NSE `corporate-announcements` feed, keyless, broadcast-timestamped): deterministic event
    CATEGORIES (results date, order win, fund raise, board meeting, pledge, rating action, …) as state variables — never text
    sentiment on history (research/06 quarantine: no language-model labels on the past; live labelling only after the stamp).

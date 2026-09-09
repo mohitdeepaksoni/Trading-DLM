@@ -91,7 +91,8 @@ def refresh_events(root="runs/nse"):
     if now.weekday() == 6 and "insider" in store.tables() and os.path.exists(os.path.join(root, "pit_union_all.txt")):
         try:
             syms = [l.strip() for l in open(os.path.join(root, "pit_union_all.txt")) if l.strip()]
-            df = get("loader", "nse_insider")(syms, session=S(), log=lambda m: None)
+            last = store.as_of("insider", now, columns=["knowledge_time"])["knowledge_time"].max()
+            df = get("loader", "nse_insider")(syms, start=(last - dt.timedelta(days=14)).strftime("%Y-%m-%d"), session=S(), log=lambda m: None)
             if df.height:
                 store.append("insider", df)
             log(f"{root}: insider refresh {df.height} rows for {len(syms)} symbols")

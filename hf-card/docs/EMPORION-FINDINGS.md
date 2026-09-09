@@ -44,7 +44,11 @@ names ever in the universe (scope `p4-realdata-nse-N2512`, 75 SUE dates 2020 →
 coverage moves the number by a t-unit either way (§16). Nothing certified. SUE was pre-registered on the chain on 2026-09-07 on
 the old evidence; the file stays and the live record decides. A frozen-clock replay of the live builder over 73 month-ends
 reproduces the ladder (60-session excess over equal weight +0.69 %/month, t 2.1; 2022 → 2026 alone +0.54 %, t 1.6): the
-pipeline is honest, the signal is modest. **Delivery percentage** (NSE MTO files, 2016 →), the first India-only state: trend over 20 vs 230 sessions ranks stocks at 60 days (+0.030, t 3.0, hit 0.61, 109 dates) but its long-only book does not beat equal weight — watch list, to be tried as a state inside the clearing model, not as a book.
+pipeline is honest, the signal is modest. **Delivery percentage** (NSE MTO files, 2016 →), the first India-only state: trend over 20 vs 230 sessions ranks stocks at 60 days (+0.030, t 3.0, hit 0.61, 109 dates) but its long-only book does not beat equal weight — watch list, to be tried as a state inside the clearing model, not as a book. **Corporate-event feeds (2026-09-09, 15 rungs, Indian costs, PBO 0.18):**
+disclosed **promoter SAST purchases predict weaker returns** (−0.027, t −2.5, hit 0.31, 52 dates) and **insider PIT net buying** points the same way
+(−0.016, t −1.9, 109 dates; 72 % of filings are employee ESOP allotments — a promoter/director-only version is pre-declared for a later run);
+announcement intensity carries nothing. Both signs were pre-declared positive and came out negative: in India, purchase disclosures cluster in
+falling names (creeping acquisitions, open offers, pledge top-ups). Nothing certifies; the live SUE file is unchanged.
 Crypto (14 pairs since 2020): rankable by risk, nothing tradeable after costs.
 
 ## 5. Structure: the general-equilibrium prior (Agora)
