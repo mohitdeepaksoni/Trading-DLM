@@ -18,6 +18,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from emporion.core.ledger import Ledger
 from emporion.data.store import BitemporalStore
 from emporion.evaluate import portfolio_returns, certify, pbo_cscv
+from emporion.evaluate.costs import _drifted
+from emporion.evaluate.costs_in import cost_vectors, round_trip_bps
+
+
+def portfolio_returns_vec(W, R, cost_bps, buy_tax_bps):
+    """portfolio_returns with per-asset one-way costs and a buy-side tax (Indian STT + stamp; plan Phase IN step 5); next-bar execution."""
+    W = np.nan_to_num(np.asarray(W, float)); R = np.nan_to_num(np.asarray(R, float)); T, N = W.shape
+    Wx = np.zeros_like(W); Wx[1:] = W[:T - 1]; gross = (Wx * R).sum(1)
+    prev = np.zeros_like(W); prev[1:] = _drifted(Wx[:-1], R[:-1]); d = Wx - prev
+    return gross - (np.abs(d) * cost_bps[None, :]).sum(1) / 1e4 - (np.maximum(d, 0.0) * buy_tax_bps[None, :]).sum(1) / 1e4, np.abs(d).sum(1)
 from p3_event_harness import rank_ic
 from emporion.anchors import price_themes
 from emporion.structure.embeddings import asset_embeddings, peer_implied_yield
@@ -38,7 +48,8 @@ def last_known(df, asof, col, syms, n=1, days=400, min_n=None):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--root", default="runs/nse"); ap.add_argument("--every", type=int, default=21)
-    ap.add_argument("--cost-bps", type=float, default=15.0); args = ap.parse_args()
+    ap.add_argument("--cost-bps", type=float, default=None, help="flat one-way cost; default = the Indian cost model (STT + stamp + exchange + slippage)")
+    ap.add_argument("--slippage-bps", type=float, default=5.0); args = ap.parse_args()
     store = BitemporalStore(os.path.join(args.root, "store")); ledger = Ledger(os.path.join(args.root, "ledger"))
     now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     res = store.all_versions("results")                                   # ALL revisions; resolved per decision date
@@ -66,12 +77,25 @@ def main():
         dw = dl.pivot(index="event_time", on="symbol", values="deliv_per").sort("event_time")
         dw = wide.select("event_time").join(dw, on="event_time", how="left")
         D = dw.select([c if c in dw.columns else pl.lit(None).alias(c) for c in syms]).to_numpy().astype(float)
-    print(f"[panel] NSE {N} stocks x {T} days {dates[0]:%Y-%m-%d}..{dates[-1]:%Y-%m-%d}; results {res.height:,} rows, shareholding {sh.height:,} rows; delivery {'%d sessions' % int(np.isfinite(D).any(1).sum()) if D is not None else 'absent'}")
+    # corporate-event tables (Phase IN data steps 3 and 6), each ONE pre-declared rung — published directions fixed here, before any run:
+    #   insider_net_buy        sum(buy value - sell value) of PIT disclosures known in the last 90 days / trailing 60-session traded value; higher = better
+    #   sast_promoter_net      promoter SAST shares acquired - sold, known in the last 180 days, / last known total shares;               higher = better
+    #   announcement_intensity announcements in the last 20 sessions vs the mean 20-session count over the prior 250 (log ratio);        HIGHER = WORSE (attention)
+    ins = store.all_versions("insider") if "insider" in store.tables() else None
+    sast = store.all_versions("sast") if "sast" in store.tables() else None
+    A = None
+    if "announcements" in store.tables():
+        an = store.as_of("announcements", now, columns=["category"]).filter(pl.col("symbol").is_in(syms)).with_columns(pl.col("knowledge_time").dt.date().alias("d"))
+        cnt = an.group_by(["symbol", "d"]).agg(pl.len().alias("n")).with_columns(pl.col("d").cast(pl.Datetime("us")).alias("event_time"))
+        aw = wide.select("event_time").join(cnt.pivot(index="event_time", on="symbol", values="n"), on="event_time", how="left")
+        A = np.nan_to_num(aw.select([c if c in aw.columns else pl.lit(None).alias(c) for c in syms]).to_numpy().astype(float))
+    print(f"[panel] NSE {N} stocks x {T} days {dates[0]:%Y-%m-%d}..{dates[-1]:%Y-%m-%d}; results {res.height:,} rows, shareholding {sh.height:,} rows; "
+          f"insider {ins.height if ins is not None else 0:,}, sast {sast.height if sast is not None else 0:,}, announcements {int(A.sum()) if A is not None else 0:,}; delivery {'%d sessions' % int(np.isfinite(D).any(1).sum()) if D is not None else 'absent'}")
     res_c = res.filter(pl.col("consolidated")); cons = set(res_c["symbol"].to_list())
     res_use = pl.concat([res_c, res.filter(~pl.col("consolidated") & ~pl.col("symbol").is_in(list(cons)))])
     Rf_d = 1.0 + 0.065 / 252
     dec = list(range(300, T - 61, args.every))
-    names = ("value", "sue", "inst_change", "fpi_level", "clearing_sue_float", "momentum", "st_reversal", "low_risk", "size", "illiquidity", "embedding_peer_value") + (("delivery_trend",) if D is not None else ())
+    names = ("value", "sue", "inst_change", "fpi_level", "clearing_sue_float", "momentum", "st_reversal", "low_risk", "size", "illiquidity", "embedding_peer_value") + (("delivery_trend",) if D is not None else ()) + (("insider_net_buy",) if ins is not None else ()) + (("sast_promoter_net",) if sast is not None else ()) + (("announcement_intensity",) if A is not None else ())
     SH_COLS = [c for c in sh.columns if c.startswith("pct_")]
     sig = {k: np.full((T, N), np.nan) for k in names}; kappas = []
     for t in dec:
@@ -88,6 +112,20 @@ def main():
             with np.errstate(all="ignore"):
                 d20 = np.nanmean(D[t - 20:t], axis=0); d250 = np.nanmean(D[t - 250:t - 20], axis=0)      # rows < t: delivery of day t is known only at t+1
             sig["delivery_trend"][t] = np.where(U & np.isfinite(d20) & np.isfinite(d250), d20 - d250, np.nan)
+        if ins is not None and t >= 60:
+            k = ins.filter((pl.col("knowledge_time") <= asof) & (pl.col("knowledge_time") > asof - dt.timedelta(days=90))).group_by("symbol").agg((pl.col("buy_value").fill_null(0) - pl.col("sell_value").fill_null(0)).sum().alias("net"))
+            net = {r["symbol"]: r["net"] for r in k.iter_rows(named=True)}; tv60 = dv[t - 60:t].sum(0)
+            v = np.array([net.get(s_, 0.0) for s_ in syms]) / np.maximum(tv60, 1.0)
+            sig["insider_net_buy"][t] = np.where(U & (tv60 > 0), np.clip(v, -1, 1), np.nan)
+        if sast is not None:
+            k = sast.filter((pl.col("knowledge_time") <= asof) & (pl.col("knowledge_time") > asof - dt.timedelta(days=180)) & pl.col("promoter")).group_by("symbol").agg((pl.col("shares_acq").fill_null(0) - pl.col("shares_sale").fill_null(0)).sum().alias("net"))
+            net = {r["symbol"]: r["net"] for r in k.iter_rows(named=True)}
+            tot = [v_[0][-1] if v_ else np.nan for v_ in shs]                                            # last known total shares (shareholding table)
+            v = np.array([net.get(s_, 0.0) / tot[i_] if (np.isfinite(tot[i_]) and tot[i_] > 0) else np.nan for i_, s_ in enumerate(syms)])
+            sig["sast_promoter_net"][t] = np.where(U, np.clip(v, -0.5, 0.5), np.nan)
+        if A is not None and t >= 270:
+            c20 = A[t - 20:t].sum(0); base = A[t - 270:t - 20].sum(0) / 250.0 * 20.0
+            sig["announcement_intensity"][t] = np.where(U, -np.log((c20 + 1.0) / (base + 1.0)), np.nan)
         if ok.sum() < 30:
             continue
         ey_med = np.median(eps[ok] / p[ok]); p_fund = np.where(ok, eps / ey_med, np.nan)
@@ -122,7 +160,13 @@ def main():
             p_hat = np.full(N, np.nan); p_hat[okc] = p[okc] * (1 + 0.03 * zs[okc]) - kappa * x / Rf_d ** 20
             sig["clearing_sue_float"][t] = np.log(np.maximum(p_hat, 1e-6) / p)
     print(f"[kappa] median={np.nanmedian(kappas) if kappas else float('nan'):.4g} (n={len(kappas)})")
-    scope = f"p4-realdata-nse-N{N}"; Rfull = R if R.shape[0] == T else np.vstack([R, np.zeros((1, N))])
+    Rfull = R if R.shape[0] == T else np.vstack([R, np.zeros((1, N))])
+    if args.cost_bps is None:                                                                      # Indian cost model (ledgered as scope suffix)
+        cost_v, tax_v = cost_vectors(N, slippage_bps=args.slippage_bps); scope = f"p4-realdata-nse-N{N}-incost"
+        cost_desc = {"cost_model": "IN delivery: STT 10 bp each side, stamp 1.5 bp buy, exchange+GST 0.35 bp, SEBI 0.01 bp, slippage %.1f bp" % args.slippage_bps, "round_trip_bps": round_trip_bps(slippage_bps=args.slippage_bps)}
+    else:
+        cost_v, tax_v = np.full(N, args.cost_bps), np.zeros(N); scope = f"p4-realdata-nse-N{N}"; cost_desc = {"cost_bps": args.cost_bps}
+    print(f"[costs] {cost_desc}")
     def tilt(S):
         W = np.zeros((T, N)); cur = np.zeros(N)
         for t in range(T):
@@ -130,7 +174,7 @@ def main():
                 sc = S[t]; k = max(1, int(np.isfinite(sc).sum() * 0.2)); top = np.argsort(np.nan_to_num(sc, nan=-1e9))[-k:]
                 cur = np.zeros(N); cur[top] = 1.0 / k
             W[t] = cur
-        return portfolio_returns(W, Rfull, cost_bps=args.cost_bps)[0], W
+        return portfolio_returns_vec(W, Rfull, cost_v, tax_v)[0], W
     nets = {k: tilt(S)[0] for k, S in sig.items()}
     pbo = pbo_cscv(np.stack([nets[k] for k in names], axis=1), n_blocks=16)["pbo"]; print(f"[pbo] across {len(names)} rungs: {pbo:.3f}")
     results = {}
@@ -148,8 +192,8 @@ def main():
             if np.isfinite(S[t]).sum() >= 30:
                 m = np.isfinite(S[t]); cur = m / m.sum()
             Wew[t] = cur
-        ew, _ = portfolio_returns(Wew, Rfull, cost_bps=args.cost_bps)
-        rep = certify(f"{name}_top20pct", T, lambda tr, te, net=net: net[te], net, ledger, scope, benchmark_returns=ew, B=1000, pbo=pbo, extra={"cost_bps": args.cost_bps})
+        ew, _ = portfolio_returns_vec(Wew, Rfull, cost_v, tax_v)
+        rep = certify(f"{name}_top20pct", T, lambda tr, te, net=net: net[te], net, ledger, scope, benchmark_returns=ew, B=1000, pbo=pbo, extra=cost_desc)
         rel = rep["vs_benchmark_ann_excess_ci"]
         print(f"[certify] {name:20s} SR={rep['sharpe']:+.2f} mdd={rep['max_drawdown']*100:.1f}% DSR={rep['dsr']['dsr']:.3f}(N={rep['n_trials']}) vsEW={rel['lo']*100:+.1f}..{rel['hi']*100:+.1f}%/yr -> {'CERTIFIED' if rep['certified'] else 'not certified'}")
         results[f"{name}_certify"] = {k: rep[k] for k in ("sharpe", "max_drawdown", "certified")}

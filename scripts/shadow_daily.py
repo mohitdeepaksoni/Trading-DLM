@@ -57,6 +57,49 @@ refresh_bars("runs/crypto_full", "coinbase")
 # bhavcopy sessions since the last stored one; min_sessions=1 because a 5-day window holds at most 4 sessions
 refresh_bars("runs/nse", "nse", end=now.strftime("%Y-%m-%d"), min_sessions=1, workers=2)
 refresh_delivery("runs/nse")
+
+
+def refresh_events(root="runs/nse"):
+    """NSE corporate-event tables (Phase IN): SAST + announcements since the last stored broadcast; pledge + bulk/block snapshots
+    every night (no history on those endpoints); insider filings per symbol of the live universe on Sundays only (200 calls)."""
+    from emporion.data.loaders.nse_events import NseSession  # noqa: PLC0415
+    store = BitemporalStore(os.path.join(root, "store")); sess = None
+    def S():
+        nonlocal sess; sess = sess or NseSession(); return sess
+    for t in ("sast", "announcements"):
+        if t not in store.tables():
+            continue
+        try:
+            last = store.as_of(t, now, columns=["knowledge_time"])["knowledge_time"].max()
+            df = get("loader", f"nse_{t}")((last - dt.timedelta(days=2)).strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d"), session=S(), log=lambda m: None)
+            df = df.filter(pl.col("knowledge_time") > last) if df.height else df
+            if df.height:
+                store.append(t, df)
+            log(f"{root}: +{df.height} {t} rows (last was {last:%Y-%m-%d %H:%M})")
+        except Exception as e:  # noqa: BLE001
+            log(f"{root}: {t} refresh FAILED {str(e)[:80]}")
+    for t in ("pledge", "largedeals"):
+        if t not in store.tables():
+            continue
+        try:
+            df = get("loader", f"nse_{t}")(session=S(), log=lambda m: None)
+            if df.height:
+                store.append(t, df)
+            log(f"{root}: {t} snapshot {df.height} rows")
+        except Exception as e:  # noqa: BLE001
+            log(f"{root}: {t} snapshot FAILED {str(e)[:80]}")
+    if now.weekday() == 6 and "insider" in store.tables() and os.path.exists(os.path.join(root, "pit_union_all.txt")):
+        try:
+            syms = [l.strip() for l in open(os.path.join(root, "pit_union_all.txt")) if l.strip()]
+            df = get("loader", "nse_insider")(syms, session=S(), log=lambda m: None)
+            if df.height:
+                store.append("insider", df)
+            log(f"{root}: insider refresh {df.height} rows for {len(syms)} symbols")
+        except Exception as e:  # noqa: BLE001
+            log(f"{root}: insider refresh FAILED {str(e)[:80]}")
+
+
+refresh_events("runs/nse")
 for name, fn in (("consensus", lambda: subprocess.run([sys.executable, "scripts/snapshot_consensus.py", "runs/us_stocks_wide"], check=False)),):
     try:
         fn(); log("consensus snapshot done")
