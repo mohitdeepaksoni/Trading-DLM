@@ -5,7 +5,7 @@ Token from HF_TOKEN. State = point-in-time stores (bars/facts/...) + the signal 
 import os, sys, tarfile, tempfile
 from huggingface_hub import HfApi, hf_hub_download
 
-REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data"); PATHS = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt", "runs/signals"]
+REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data"); PATHS = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt", "runs/signals", "runs/paper"]
 tok = os.environ.get("HF_TOKEN"); api = HfApi(token=tok)
 cmd = sys.argv[1] if len(sys.argv) > 1 else "pull"
 if cmd == "pull":

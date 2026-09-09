@@ -61,8 +61,12 @@ chain decides, nothing changes), value, accruals (quarterly!), earnings growth, 
 change (monthly), delivery-percentage change, insider net buying, pledge change, price themes, no-fit composite.
 **Structure**: Agora India events — budget tariff changes, RBI actions, export bans/quotas — on NSE sectoral indices
 (day-0 harness as for the US; `emporion/structure/events_in.py`, `sector_map_in.py`).
-**Trader path**: 7 clean nights → NSE file is "live" on the chain (already 1); 3 months of paper via Kite paper/sandbox with
-implementation shortfall measured; micro-live only after certification (research/05 staged path, kill-switch rules).
+**Trader path**: 7 clean nights → NSE file is "live" on the chain (night 4 done); **S1 paper trading starts 2026-09-10** with the
+broker-free engine `scripts/paper_trade.py` inside the nightly job (market-on-open fills at the bhavcopy open, Indian costs, monthly
+rebalance from the morning file, `signal` and `ew` books traded identically, every fill and NAV row ledgered under `paper-nse`,
+state travels with the chain; page `runs/paper/nse/PAPER.md`). Kite (user has access) is the next layer: arrival-price LTP and depth at
+09:15 IST for a sharper shortfall, and later S2 real orders under the SEBI Algo-ID rules — not needed for S1 fills. 3 months of paper
+with shortfall inside the bootstrap CI, then micro-live only after certification (research/05, kill-switch rules).
 **Exit criteria**: replay reproduces the research numbers through the live path and the 2016–2019 holdout is reported; bars 2016→; ≥ 6 India-specific rungs on the ledger; cost model in every number; India event harness
 with ≥ 10 dated events; the daily NSE file unchanged and green for 30 nights; a paper-trading log with shortfall.
 

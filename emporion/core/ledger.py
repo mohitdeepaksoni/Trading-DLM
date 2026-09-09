@@ -23,7 +23,7 @@ SCHEMA = {
     "scope": pl.Utf8, "payload": pl.Utf8, "inputs_hash": pl.Utf8,
     "prev_hash": pl.Utf8, "row_hash": pl.Utf8,
 }
-KINDS = ("trial", "procedure", "event", "signal", "perf", "note", "certification")
+KINDS = ("trial", "procedure", "event", "signal", "perf", "note", "certification", "paper")   # paper: S1 simulated fills / NAV rows (2026-09-09)
 
 
 def _row_hash(seq: int, ts: str, kind: str, name: str, scope: str, payload: str,
