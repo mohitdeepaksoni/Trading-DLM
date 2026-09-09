@@ -34,9 +34,29 @@ def refresh_bars(root, loader, **kw):
         log(f"{root}: bars refresh FAILED {str(e)[:80]}")
 
 
+def refresh_delivery(root="runs/nse"):
+    """NSE delivery position (MTO) for the sessions since the last one in the store; knowledge_time = session + 1 day."""
+    store = BitemporalStore(os.path.join(root, "store"))
+    if "delivery" not in store.tables():
+        return
+    last = store.as_of("delivery", now, columns=["deliv_per"])["event_time"].max()
+    try:
+        df = get("loader", "nse_delivery")((last + dt.timedelta(days=1)).strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d"), workers=2, log=lambda m: None)
+        df = df.filter(pl.col("event_time") > last)
+        if df.height:
+            store.append("delivery", df)
+        log(f"{root}: +{df.height} delivery rows (last was {last:%Y-%m-%d})")
+    except Exception as e:  # noqa: BLE001
+        log(f"{root}: delivery refresh FAILED {str(e)[:80]}")
+
+
 t0 = time.perf_counter()
 refresh_bars("runs/us_stocks_wide", "nasdaq", assetclass="stocks")
 refresh_bars("runs/crypto_full", "coinbase")
+# NSE bars were never refreshed by this job until 2026-09-09 (the NSE file carried last_bar 2026-09-04 for three nights):
+# bhavcopy sessions since the last stored one; min_sessions=1 because a 5-day window holds at most 4 sessions
+refresh_bars("runs/nse", "nse", end=now.strftime("%Y-%m-%d"), min_sessions=1, workers=2)
+refresh_delivery("runs/nse")
 for name, fn in (("consensus", lambda: subprocess.run([sys.executable, "scripts/snapshot_consensus.py", "runs/us_stocks_wide"], check=False)),):
     try:
         fn(); log("consensus snapshot done")
