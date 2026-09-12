@@ -17,6 +17,16 @@ if cmd == "pull":
         t.extractall(".")
     print("[shadow_sync] pulled state:", os.path.getsize(p) // 1e6, "MB")
 elif cmd == "push":
+    # never overwrite the remote state with a thinner one (a failed pull followed by the always() push step would do exactly that)
+    chain = "runs/signals/chain.txt"
+    n_local = len([l for l in open(chain).read().splitlines() if l.strip()]) if os.path.exists(chain) else 0
+    try:
+        rp = hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok, local_dir=tempfile.mkdtemp())
+        n_remote = len([l for l in open(rp).read().splitlines() if l.strip()])
+    except Exception:  # noqa: BLE001
+        n_remote = 0
+    if n_local < n_remote:
+        raise SystemExit(f"[shadow_sync] refusing to push: local chain has {n_local} entries, remote has {n_remote}")
     out = os.path.join(tempfile.mkdtemp(), "state.tar.gz")
     with tarfile.open(out, "w:gz", compresslevel=6) as t:
         for pth in PATHS:

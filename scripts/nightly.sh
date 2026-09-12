@@ -4,6 +4,8 @@
 set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 mkdir -p runs/signals
+# idempotent per UTC day: the fallback cron re-fires ~75 min after the primary; if today's NSE file exists, nothing to do
+if ls runs/signals/nse-$(date -u +%Y-%m-%d).json > /dev/null 2>&1; then echo "[nightly] files for $(date -u +%Y-%m-%d) already exist; skipping" | tee -a runs/signals/nightly.log; exit 0; fi
 python scripts/shadow_daily.py 2>&1 | tee -a runs/signals/nightly.log
 python scripts/integrity_check.py 2>&1 | tee -a runs/signals/nightly.log
 python scripts/report_signals.py 2>&1 | tee -a runs/signals/nightly.log
