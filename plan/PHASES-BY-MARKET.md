@@ -4,6 +4,13 @@
 build each market as its own self-contained engine ("DL" = data → anchors → gates → chain file) on the shared honesty
 stack. Combine later. This replaces the "all markets at once" ordering of plan/PLAN.md P3–P7 without changing any gate.*
 
+## Decision 2026-09-26 — capture the live record first, build later
+The user's call: let the live record run end to end before any further engine work. Concretely: the shadow chain (21 files per
+market, 84/84 verified, no misses since the 09-12 recovery) and the S1 paper book (inception 09-10, first rebalance 10-01) run
+unattended and are checked daily; the NSE file reaches its 30-clean-night mark about 2026-10-12 and the paper book its three-month
+mark about 2026-12-10. Build work (Phase IN items 1–6, then EU, US, CR, ALL) resumes on the user's word; the 31 October engine date
+therefore moves by the length of the pause. Nothing on the ledger, the chain or the paper book changes while we wait — that is the point.
+
 ## 0. Why this order (evidence, not preference)
 | market | point-in-time data today | strongest anchor so far | live | verdict |
 |---|---|---|---|---|
