@@ -10,3 +10,4 @@ python scripts/shadow_daily.py 2>&1 | tee -a runs/signals/nightly.log
 python scripts/integrity_check.py 2>&1 | tee -a runs/signals/nightly.log
 python scripts/report_signals.py 2>&1 | tee -a runs/signals/nightly.log
 python scripts/paper_trade.py --market nse 2>&1 | tee -a runs/signals/nightly.log
+python scripts/data_inventory.py --out runs/signals > /dev/null 2>&1 || echo "[nightly] data inventory FAILED" | tee -a runs/signals/nightly.log
