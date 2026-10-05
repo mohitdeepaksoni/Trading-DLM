@@ -11,10 +11,18 @@ import emporion.data.loaders  # noqa: F401
 ap = argparse.ArgumentParser(); ap.add_argument("--top", type=int, default=200); ap.add_argument("--root", default="runs/nse"); ap.add_argument("--only", default="", help="comma list: results,shareholding,flows"); ap.add_argument("--symbols-file", default="", help="explicit symbol list (one per line) instead of top-N"); ap.add_argument("--replace", action="store_true", help="drop existing parts of each rebuilt table first"); args = ap.parse_args()
 only = set(args.only.split(",")) if args.only else {"results", "shareholding", "flows"}
 import glob, shutil
-def _drop(table):
+def _drop(table, new_df=None):
+    """--replace moves the old table aside — but NEVER for a thinner table: if the fresh fetch covers fewer symbols than what is stored
+    (a timeout, a shorter symbol list, an API outage), the new rows are appended as revisions instead (the store resolves the latest per
+    key/event_time). 2026-09-13..10-04: weekly refreshes with the 301-name list replaced the 387-symbol table and shrank coverage to 295."""
     if args.replace:
+        cur = os.path.join(args.root, "store", table)
+        if os.path.isdir(cur) and glob.glob(os.path.join(cur, "part-*.parquet")) and new_df is not None:
+            old_syms = pl.scan_parquet(os.path.join(cur, "part-*.parquet")).select("symbol").unique().collect().height
+            if new_df["symbol"].n_unique() < old_syms:
+                print(f"[replace] REFUSED for {table}: new table has {new_df['symbol'].n_unique()} symbols < stored {old_syms}; appending as revisions instead", flush=True); return
         bak = os.path.join(args.root, "store", f"_{table}.bak-{dt.datetime.now():%Y%m%d%H%M}")
-        if os.path.isdir(os.path.join(args.root, "store", table)): shutil.move(os.path.join(args.root, "store", table), bak); print(f"[replace] {table} -> {bak}", flush=True)
+        if os.path.isdir(cur): shutil.move(cur, bak); print(f"[replace] {table} -> {bak}", flush=True)
 store = BitemporalStore(os.path.join(args.root, "store")); now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 bars = store.as_of("bars", now, columns=["close", "volume"], event_start=now - dt.timedelta(days=365))
 tv = bars.group_by("symbol").agg((pl.col("close") * pl.col("volume")).median().alias("tv"), pl.len().alias("n")).filter(pl.col("n") > 200).sort("tv", descending=True).head(args.top)
@@ -24,11 +32,11 @@ if args.symbols_file:                                                       # po
 print(f"[universe] {len(syms)} NSE symbols by traded value: {syms[:8]}", flush=True)
 t0 = time.perf_counter()
 if "results" in only:
-    res = get("loader", "nse_results")(syms, sleep=0.4); _drop("results")
+    res = get("loader", "nse_results")(syms, sleep=0.4); _drop("results", res)
     store.register_table("results", ["symbol", "consolidated"]); h = store.append("results", res)
     print(f"[results] {res.height:,} rows, {res['symbol'].n_unique()} symbols, {res['event_time'].min():%Y-%m-%d}..{res['event_time'].max():%Y-%m-%d} hash={h[:10]} ({time.perf_counter()-t0:.0f}s)", flush=True)
 if "shareholding" in only:
-    sh = get("loader", "nse_shareholding")(syms, sleep=0.4); _drop("shareholding")
+    sh = get("loader", "nse_shareholding")(syms, sleep=0.4); _drop("shareholding", sh)
     store.register_table("shareholding", ["symbol"]); h = store.append("shareholding", sh)
     print(f"[shareholding] {sh.height:,} rows, {sh['symbol'].n_unique()} symbols, cols={[c for c in sh.columns if c.startswith('pct_')]} hash={h[:10]} ({time.perf_counter()-t0:.0f}s)", flush=True)
 if "flows" in only:
