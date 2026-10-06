@@ -54,11 +54,16 @@ def main():
                 return s_
         return None
 
-    # 1. settle pending orders whose session bar now exists
+    # 1. settle pending orders whose session bar now exists; an order with no fill 7 calendar days after its date is cancelled
+    #    (a name that does not trade — suspended, delisted, renamed). Incident 5 (2026-10-06): one such EW order, pending since 09-10,
+    #    blocked every rebalance because the rule waited for all pending orders to clear.
     for bname, book in st["books"].items():
         keep = []
         for o in book["pending"]:
-            s_ = first_session_on_or_after(dt.datetime.fromisoformat(o["order_date"]))
+            od = dt.datetime.fromisoformat(o["order_date"]); s_ = first_session_on_or_after(od)
+            if (s_ is None or (o["symbol"], s_) not in px) and last_session >= od + dt.timedelta(days=7):
+                c = {"symbol": o["symbol"], "qty": o["qty"], "order_date": o["order_date"], "decision_file": o["decision_file"], "reason": "no bar within 7 days"}
+                ledger.append("paper", f"{bname}:cancelled:{o['symbol']}:{o['order_date'][:10]}", c, scope=scope); log(f"{bname}: cancelled unfilled order {o['symbol']} from {o['order_date'][:10]}"); continue
             if s_ is None or s_ > last_session or (o["symbol"], s_) not in px:
                 keep.append(o); continue
             fill = px[(o["symbol"], s_)][0]
