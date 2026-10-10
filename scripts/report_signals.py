@@ -13,7 +13,7 @@ ROOTS = {"us_stocks_wide": "runs/us_stocks_wide", "crypto_full": "runs/crypto_fu
 ap = argparse.ArgumentParser(); ap.add_argument("--signals", default="runs/signals"); args = ap.parse_args()
 now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 # signal files only: <market>-YYYY-MM-DD.json. Anything else in the folder (integrity-*, DATA-INVENTORY.json) is not a book.
-files = sorted(f for f in glob.glob(os.path.join(args.signals, "*.json")) if re.match(r"^[a-z0-9_-]+-\d{4}-\d{2}-\d{2}\.json$", os.path.basename(f)))
+files = sorted(f for f in glob.glob(os.path.join(args.signals, "*.json")) if re.match(r"^[a-z0-9_-]+-\d{4}-\d{2}-\d{2}\.json$", os.path.basename(f)) and not os.path.basename(f).startswith("integrity"))
 sigs = [json.load(open(f)) for f in files]
 by = {}
 for s in sigs:
