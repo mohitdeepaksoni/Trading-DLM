@@ -95,7 +95,7 @@ def main():
     sp = "runs/paper/nse/state.json"
     if os.path.exists(sp):
         s = json.load(open(sp)); inv["paper_nse"] = {b: {"nav": bk["nav"][-1]["nav"] if bk["nav"] else None, "date": bk["nav"][-1]["date"] if bk["nav"] else None, "fills": len(bk["fills"]), "pending": len(bk["pending"])} for b, bk in s["books"].items()}
-    os.makedirs(args.out, exist_ok=True); json.dump(inv, open(os.path.join(args.out, "DATA-INVENTORY.json"), "w"), indent=1, default=str)
+    os.makedirs(args.out, exist_ok=True); json.dump(inv, open(os.path.join(args.out, "data-inventory.json.txt"), "w"), indent=1, default=str)   # .json.txt: the signals folder's *.json namespace belongs to signal files only
     md = [f"# Data inventory — {now:%Y-%m-%d %H:%M} UTC", "", f"Signal chain: {inv['signal_chain_entries']} entries. Every table below is a bitemporal store (event_time / knowledge_time); rows are as of now.", ""]
     for m, rec in inv["markets"].items():
         md += [f"## {m}", "", "| table | parts | rows | symbols | event span | latest knowledge |", "|---|---|---|---|---|---|"]

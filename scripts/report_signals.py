@@ -12,11 +12,13 @@ from emporion.data.store import BitemporalStore
 ROOTS = {"us_stocks_wide": "runs/us_stocks_wide", "crypto_full": "runs/crypto_full", "nse": "runs/nse"}
 ap = argparse.ArgumentParser(); ap.add_argument("--signals", default="runs/signals"); args = ap.parse_args()
 now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
-files = sorted(f for f in glob.glob(os.path.join(args.signals, "*.json")) if not os.path.basename(f).startswith("integrity"))
+# signal files only: <market>-YYYY-MM-DD.json. Anything else in the folder (integrity-*, DATA-INVENTORY.json) is not a book.
+files = sorted(f for f in glob.glob(os.path.join(args.signals, "*.json")) if re.match(r"^[a-z0-9_-]+-\d{4}-\d{2}-\d{2}\.json$", os.path.basename(f)))
 sigs = [json.load(open(f)) for f in files]
 by = {}
 for s in sigs:
-    by.setdefault(s["market"], []).append(s)
+    if "market" in s:
+        by.setdefault(s["market"], []).append(s)
 chain = [l.split() for l in open(os.path.join(args.signals, "chain.txt")).read().splitlines() if l.strip()] if os.path.exists(os.path.join(args.signals, "chain.txt")) else []
 integ = sorted(glob.glob(os.path.join(args.signals, "integrity-*.json"))); integ = json.load(open(integ[-1])) if integ else {}
 ots = {os.path.basename(f) + ".ots": v for f, v in [(f, integ.get("ots", {}).get(os.path.basename(f) + ".ots", "no proof")) for f in files]}
