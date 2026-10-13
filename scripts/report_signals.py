@@ -38,7 +38,15 @@ def realised(sig):
     out = {}
     for h in (1, 5, 20):
         if i0 + h < len(dates):
-            r = P[i0 + h] / P[i0] - 1; out[h] = (float(sum(wt * r[j] for j, wt in book.items())), float(np.nanmean(r[univ])), dates[i0 + h].isoformat())
+            r = P[i0 + h] / P[i0] - 1
+            # a name that did not trade on either session has no return: treat it as FLAT for both sides (the house
+            # convention in emporion/evaluate/costs.py, which nan_to_num's the return matrix). Before 2026-10-13 the book
+            # summed raw values, so one non-trading holding turned the whole book cell into nan while the EW cell — a
+            # nanmean — quietly dropped it; that asymmetry flattered EW and hid the book (incident 7).
+            rb = np.nan_to_num(r, nan=0.0)
+            miss_b = sum(1 for j in book if not np.isfinite(r[j])); miss_u = sum(1 for j in univ if not np.isfinite(r[j]))
+            out[h] = (float(sum(wt * rb[j] for j, wt in book.items())), float(np.mean(rb[univ])) if univ else float("nan"),
+                      dates[i0 + h].isoformat(), miss_b, miss_u)
     return out
 md = [f"# Emporion shadow chain — live record", "", f"Generated {now:%Y-%m-%d %H:%M} UTC from {len(files)} published files. Every book below was hashed, chained and timestamp-stamped on the day shown, before the returns that follow it existed. Nothing here is a backtest.", ""]
 md += [f"**Chain:** {len(chain)} links, integrity {'OK' if integ.get('ok') else 'NOT VERIFIED'} (checked {integ.get('as_of', integ.get('date', '—'))}). **Proofs:** " + ", ".join(f"{k.replace('.json.ots','')}: {v.replace('_',' ')}" for k, v in sorted(ots.items())[-4:]), ""]
@@ -52,16 +60,18 @@ for market, lst in by.items():
     for s in lst:
         rr = realised(s); cells = []
         for h in (1, 5, 20):
-            if h in rr: b, e, _ = rr[h]; rec[h].append((b, e)); cells.append(f"{b*100:+.2f}% / {e*100:+.2f}%")
+            if h in rr:
+                b, e, _, mb, mu = rr[h]; rec[h].append((b, e, mb)); cells.append(f"{b*100:+.2f}% / {e*100:+.2f}%" + (f" ({mb}✗)" if mb else ""))
             else: cells.append("pending")
         md.append(f"| {s['as_of'][:10]} | {s.get('last_bar')} | {s['n_positions']} | " + " | ".join(cells) + " |")
     md.append("")
     for h in (1, 5, 20):
         if rec[h]:
-            b = np.array([x[0] for x in rec[h]]); e = np.array([x[1] for x in rec[h]])
-            md.append(f"- {h}-session record over {len(b)} files: book mean {b.mean()*100:+.2f} % vs EW {e.mean()*100:+.2f} %; beat EW {int((b > e).sum())}/{len(b)}. " + ("(too few prints to mean anything yet)" if len(b) < 20 else ""))
+            b = np.array([x[0] for x in rec[h]]); e = np.array([x[1] for x in rec[h]]); mb = sum(x[2] for x in rec[h])
+            md.append(f"- {h}-session record over {len(b)} files: book mean {b.mean()*100:+.2f} % vs EW {e.mean()*100:+.2f} %; beat EW {int((b > e).sum())}/{len(b)}"
+                      + (f"; {mb} holding-sessions had no trade and were held flat" if mb else "") + ". " + ("(too few prints to mean anything yet)" if len(b) < 20 else ""))
     md.append("")
-md += ["## How to read this", "", "- A file is one day's book for one pre-registered rule; its sha256 is chained to the previous file and stamped into Bitcoin (OpenTimestamps). Verify any file with `ots verify <file>.ots`.", "- Returns are simple close-to-close from the file's last bar, equal-weight book vs the equal-weight point-in-time universe, before costs. Certification (research/03 §10) needs months of prints; until then this page is a record, not a claim.", "- ABSTAIN means fewer than 30 names had a valid score that day and the book is empty by rule.", ""]
+md += ["## How to read this", "", "- A file is one day's book for one pre-registered rule; its sha256 is chained to the previous file and stamped into Bitcoin (OpenTimestamps). Verify any file with `ots verify <file>.ots`.", "- Returns are simple close-to-close from the file's last bar, equal-weight book vs the equal-weight point-in-time universe, before costs. A holding that did not trade on either session is held flat on both sides and counted as (n✗). Certification (research/03 §10) needs months of prints; until then this page is a record, not a claim.", "- ABSTAIN means fewer than 30 names had a valid score that day and the book is empty by rule.", ""]
 text = "\n".join(md)
 with open(os.path.join(args.signals, "REPORT.md"), "w") as f: f.write(text)
 body = html.escape(text)
