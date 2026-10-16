@@ -79,7 +79,19 @@ if cmd == "pull":
         from huggingface_hub import snapshot_download
         d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"], local_dir=tempfile.mkdtemp())
         print(f"[shadow_sync] overlaid store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
-    for local, repo_dir in RECORD:                                            # 2. the record wins over anything in the stores
+    # 2. the record wins over the stores — but NEVER overwrite a longer local record with a shorter remote one. The node is
+    #    primary while the quota blocks store pushes, so its local chain is normally ahead of HF; clobbering chain.txt with an
+    #    older remote copy would truncate the live record.
+    n_local = _chain_len("runs/signals/chain.txt"); n_remote = 0
+    if "shadow/signals/chain.txt" in remote:
+        try:
+            n_remote = _chain_len(hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok, local_dir=tempfile.mkdtemp()))
+        except Exception:  # noqa: BLE001
+            pass
+    if n_local and n_local >= n_remote:
+        print(f"[shadow_sync] keeping the local record (chain {n_local} entries >= remote {n_remote}); no record overlay")
+        remote = set()
+    for local, repo_dir in RECORD:
         if any(f.startswith(repo_dir + "/") for f in remote):
             from huggingface_hub import snapshot_download
             d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"], local_dir=tempfile.mkdtemp())

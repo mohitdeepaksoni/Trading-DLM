@@ -2,9 +2,10 @@ name: shadow-chain
 
 on:
   schedule:
-    - cron: "30 23 * * *"      # primary: 23:30 UTC (05:00 IST) — before every next session
-    - cron: "45 0 * * *"       # fallback: GitHub drops or delays scheduled runs under load (night 7, 2026-09-11, never fired);
-                               # nightly.sh exits early if today's files already exist, so a double fire is a no-op
+    # FALLBACK ONLY since 2026-10-16: the persistent node runs the job at 00:15 UTC and pushes the record, so this 05:00 UTC
+    # run finds the day's files already in the pulled record and exits early (nightly.sh is idempotent per UTC day). It does
+    # the work only when the node was down. One cron, late, so the two can never build the same day concurrently.
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -17,7 +18,7 @@ permissions:
 jobs:
   nightly:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150     # Sunday runs carry the NSE fundamentals refresh (~60-90 min on the runner)
     steps:
       - uses: actions/checkout@v4
 
