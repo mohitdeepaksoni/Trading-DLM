@@ -83,7 +83,9 @@ def main():
         sp = os.path.join(root, "store")
         if not os.path.isdir(sp):
             continue
-        st = BitemporalStore(sp); tables = [t for t in st.tables() if glob.glob(os.path.join(sp, t, "part-*.parquet"))]
+        st = BitemporalStore(sp)
+        # ".bak" dirs are repair backups, not tables (the incident-4 safety copy showed up as a "table" on 10-05)
+        tables = [t for t in st.tables() if ".bak" not in t and glob.glob(os.path.join(sp, t, "part-*.parquet"))]
         rec = {"tables": [table_stats(st, t, now) for t in tables]}
         if "bars" in tables:
             start = dt.date(2016, 1, 1) if m in ("nse", "eu_uk") else dt.date(2014, 1, 1) if m == "eu_sectors" else dt.date(2015, 1, 1)
