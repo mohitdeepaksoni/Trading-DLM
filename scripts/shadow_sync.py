@@ -14,8 +14,20 @@ published file still carries the correct `last_bar` — the record stays true, o
 FILE-LEVEL, NOT A TARBALL (2026-10-13). The stores used to be packed into one ~300-470 MB `state.tar.gz` and uploaded nightly;
 an HF repo is git, so 44 versions sat in history (~13 GB) and filled the quota. Mirroring individual files means an unchanged
 parquet part is skipped by its hash and a night writes ~10-40 MB. The tarball is still read on pull for older state."""
-import os, sys, tarfile, tempfile
+import atexit, os, shutil, sys, tarfile, tempfile
 from huggingface_hub import HfApi, hf_hub_download
+
+# Every download and staging copy used to get its own tempfile.mkdtemp() and none of them were ever removed: seven nights of
+# pulls and pushes left 43 GB in /tmp on the node (incident 11). Now there is one work root per invocation, named per purpose
+# and deleted on exit whatever happens, so a run's peak footprint is bounded and nothing survives it.
+WORK = tempfile.mkdtemp(prefix="shadow_sync-")
+atexit.register(lambda: shutil.rmtree(WORK, ignore_errors=True))
+
+
+def _tmp(name):
+    d = os.path.join(WORK, name)
+    os.makedirs(d, exist_ok=True)
+    return d
 
 REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data")
 STORES = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt"]
@@ -45,7 +57,7 @@ def _mirror(src_dir, dst_root="."):
 
 
 def _stage(paths):
-    staged = tempfile.mkdtemp(); n = 0; mb = 0.0
+    staged = _tmp("stage-stores"); n = 0; mb = 0.0
     for pth in paths:
         if not os.path.exists(pth):
             continue
@@ -69,7 +81,7 @@ if cmd == "pull":
     #    10-13 push landed 75 of ~600 files before the quota stopped it — so it must never be treated as a whole state.
     if "shadow/state.tar.gz" in remote:
         try:
-            tp = hf_hub_download(REPO, "shadow/state.tar.gz", repo_type="dataset", token=tok, local_dir=tempfile.mkdtemp())
+            tp = hf_hub_download(REPO, "shadow/state.tar.gz", repo_type="dataset", token=tok, local_dir=_tmp("stores-tarball"))
             with tarfile.open(tp) as t:
                 t.extractall(".")
             print("[shadow_sync] pulled base stores from the tarball:", int(os.path.getsize(tp) / 1e6), "MB")
@@ -77,7 +89,7 @@ if cmd == "pull":
             print("[shadow_sync] tarball base unavailable:", str(e)[:80])
     if any(f.startswith(PREFIX + "/") for f in remote):
         from huggingface_hub import snapshot_download
-        d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"], local_dir=tempfile.mkdtemp())
+        d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"], local_dir=_tmp("stores-mirror"))
         print(f"[shadow_sync] overlaid store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
     # 2. the record wins over the stores — but NEVER overwrite a longer local record with a shorter remote one. The node is
     #    primary while the quota blocks store pushes, so its local chain is normally ahead of HF; clobbering chain.txt with an
@@ -85,7 +97,7 @@ if cmd == "pull":
     n_local = _chain_len("runs/signals/chain.txt"); n_remote = 0
     if "shadow/signals/chain.txt" in remote:
         try:
-            n_remote = _chain_len(hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok, local_dir=tempfile.mkdtemp()))
+            n_remote = _chain_len(hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok, local_dir=_tmp("remote-chain")))
         except Exception:  # noqa: BLE001
             pass
     if n_local and n_local >= n_remote:
@@ -94,13 +106,13 @@ if cmd == "pull":
     for local, repo_dir in RECORD:
         if any(f.startswith(repo_dir + "/") for f in remote):
             from huggingface_hub import snapshot_download
-            d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"], local_dir=tempfile.mkdtemp())
+            d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"], local_dir=_tmp("record-" + repo_dir.replace("/", "-")))
             print(f"[shadow_sync] pulled record: {_mirror(os.path.join(d, *repo_dir.split('/')), local)} files -> {local}")
 elif cmd == "push":
     n_local = _chain_len("runs/signals/chain.txt"); n_remote = 0
     for cand in ("shadow/signals/chain.txt", f"{PREFIX}/runs/signals/chain.txt"):
         try:
-            n_remote = max(n_remote, _chain_len(hf_hub_download(REPO, cand, repo_type="dataset", token=tok, local_dir=tempfile.mkdtemp())))
+            n_remote = max(n_remote, _chain_len(hf_hub_download(REPO, cand, repo_type="dataset", token=tok, local_dir=_tmp("remote-chain-" + cand.replace("/", "-")))))
         except Exception:  # noqa: BLE001
             pass
     if n_local < n_remote:                                                    # never thin out a thicker remote record
