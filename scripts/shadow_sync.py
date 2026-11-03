@@ -59,11 +59,22 @@ def _mirror(src_dir, dst_root="."):
     return n
 
 
+# HF allows at most 10,000 files per directory; the NSE XBRL cache holds ~14,000 small files, so the file mirror is refused
+# (2026-11-03). Directories listed here travel as ONE tar.gz beside the mirror and are unpacked on pull. The cache changes only
+# on the weekly refresh, and HF's chunk-level dedup (Xet) keeps an unchanged archive nearly free to re-upload.
+ARCHIVED = {"runs/nse/xbrl_cache"}
+
+
 def _stage(paths):
     staged = _tmp("stage-stores"); n = 0; mb = 0.0
     for pth in paths:
         if not os.path.exists(pth):
             continue
+        if pth in ARCHIVED and os.path.isdir(pth):
+            dst = os.path.join(staged, pth + ".tar.gz"); os.makedirs(os.path.dirname(dst), exist_ok=True)
+            with tarfile.open(dst, "w:gz", compresslevel=6) as t:
+                t.add(pth, arcname=os.path.basename(pth))
+            n += 1; mb += os.path.getsize(dst) / 1e6; continue
         if os.path.isfile(pth):
             dst = os.path.join(staged, pth); os.makedirs(os.path.dirname(dst), exist_ok=True)
             open(dst, "wb").write(open(pth, "rb").read()); n += 1; mb += os.path.getsize(pth) / 1e6; continue
@@ -94,6 +105,11 @@ if cmd == "pull":
         from huggingface_hub import snapshot_download
         d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"], local_dir=_tmp("stores-mirror"))
         print(f"[shadow_sync] overlaid store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
+        for a in ARCHIVED:                                                     # unpack archived directories
+            if os.path.exists(a + ".tar.gz"):
+                with tarfile.open(a + ".tar.gz") as t:
+                    t.extractall(os.path.dirname(a))
+                os.remove(a + ".tar.gz"); print(f"[shadow_sync] unpacked {a}")
     # 2. the record wins over the stores — but NEVER overwrite a longer local record with a shorter remote one. The node is
     #    primary while the quota blocks store pushes, so its local chain is normally ahead of HF; clobbering chain.txt with an
     #    older remote copy would truncate the live record.
