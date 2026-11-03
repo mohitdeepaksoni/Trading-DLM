@@ -29,8 +29,11 @@ def _tmp(name):
     os.makedirs(d, exist_ok=True)
     return d
 
-REPO = os.environ.get("EMPORION_DATA_REPO", "deepakdsoni/emporion-data")
-STORES = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt"]
+REPO = os.environ.get("EMPORION_DATA_REPO", "mohitsatna/emporion-data")   # moved 2026-11-03 from deepakdsoni/emporion-data (quota full)
+# the ledgers are parquet, so they travel with the stores; before 2026-11-03 they were in neither tier and every Actions run
+# started them empty ("ledgers 1/1" on the runner vs "5/5" on the node) — incident 12
+STORES = ["runs/us_stocks_wide/store", "runs/crypto_full/store", "runs/nse/store", "runs/nse/xbrl_cache", "runs/nse/pit_union_all.txt",
+          "runs/signals/ledger", "runs/paper/nse/ledger"]
 RECORD = [("runs/signals", "shadow/signals"), ("runs/paper", "shadow/paper")]   # small, not LFS-tracked -> always pushable
 PREFIX = "shadow/state"
 # the ledgers are parquet (LFS-tracked, and so quota-bound); they travel with the stores, never with the record
