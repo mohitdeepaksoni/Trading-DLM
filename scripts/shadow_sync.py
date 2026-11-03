@@ -89,51 +89,67 @@ def _stage(paths):
     return staged, n, mb
 
 
-if cmd == "pull":
-    remote = set(api.list_repo_files(REPO, repo_type="dataset"))
-    # 1. the big stores: tarball FIRST as the complete base, then the file mirror on top. The mirror can be PARTIAL — the
-    #    10-13 push landed 75 of ~600 files before the quota stopped it — so it must never be treated as a whole state.
-    if "shadow/state.tar.gz" in remote:
+def _retry(fn, what, tries=4):
+    """HF rate-limits at 5,000 resolver requests per 5 minutes; back off and retry on 429 / 5xx, raise on anything else."""
+    import time
+    for i in range(tries):
         try:
-            tp = hf_hub_download(REPO, "shadow/state.tar.gz", repo_type="dataset", token=tok, local_dir=_tmp("stores-tarball"))
-            with tarfile.open(tp) as t:
-                t.extractall(".")
-            print("[shadow_sync] pulled base stores from the tarball:", int(os.path.getsize(tp) / 1e6), "MB")
+            return fn()
         except Exception as e:  # noqa: BLE001
-            print("[shadow_sync] tarball base unavailable:", str(e)[:80])
+            msg = str(e)
+            if i < tries - 1 and any(k in msg for k in ("429", "Too Many Requests", "502", "503", "504", "timed out")):
+                wait = 90 * (i + 1); print(f"[shadow_sync] {what}: {msg.splitlines()[0][:80]} — retrying in {wait}s"); time.sleep(wait); continue
+            raise
+
+
+def _remote_chain_len():
+    """Length of the published chain. 0 ONLY when the file genuinely does not exist; any other failure RAISES. The guard used to
+    swallow every exception as "remote is empty", so a rate-limited read let a 152-link record overwrite the 212-link one
+    (incident 14). Failing closed: when in doubt, nothing is pushed."""
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+    try:
+        p = _retry(lambda: hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok,
+                                           local_dir=_tmp("remote-chain"), force_download=True), "read remote chain")
+        return _chain_len(p)
+    except (EntryNotFoundError, RepositoryNotFoundError):
+        return 0
+
+
+if cmd == "pull":
+    from huggingface_hub import snapshot_download
+    remote = set(_retry(lambda: api.list_repo_files(REPO, repo_type="dataset"), "list files"))
+    # 1. the stores. The file mirror is the source once it exists; the legacy tarball is ONLY a fallback for a dataset that
+    #    has no mirror. Using the tarball as a base under the mirror (as before) also restored its 2026-10-13 runs/signals,
+    #    which is how a failed pull turned into an old record being pushed (incident 14).
     if any(f.startswith(PREFIX + "/") for f in remote):
-        from huggingface_hub import snapshot_download
-        d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"], local_dir=_tmp("stores-mirror"))
-        print(f"[shadow_sync] overlaid store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
+        d = _retry(lambda: snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"],
+                                             local_dir=_tmp("stores-mirror"), max_workers=4), "pull store mirror")
+        print(f"[shadow_sync] pulled store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
         for a in ARCHIVED:                                                     # unpack archived directories
             if os.path.exists(a + ".tar.gz"):
                 with tarfile.open(a + ".tar.gz") as t:
                     t.extractall(os.path.dirname(a))
                 os.remove(a + ".tar.gz"); print(f"[shadow_sync] unpacked {a}")
-    # 2. the record wins over the stores — but NEVER overwrite a longer local record with a shorter remote one. The node is
-    #    primary while the quota blocks store pushes, so its local chain is normally ahead of HF; clobbering chain.txt with an
-    #    older remote copy would truncate the live record.
-    n_local = _chain_len("runs/signals/chain.txt"); n_remote = 0
-    if "shadow/signals/chain.txt" in remote:
-        try:
-            n_remote = _chain_len(hf_hub_download(REPO, "shadow/signals/chain.txt", repo_type="dataset", token=tok, local_dir=_tmp("remote-chain")))
-        except Exception:  # noqa: BLE001
-            pass
+    elif "shadow/state.tar.gz" in remote:
+        tp = _retry(lambda: hf_hub_download(REPO, "shadow/state.tar.gz", repo_type="dataset", token=tok, local_dir=_tmp("stores-tarball")), "pull tarball")
+        with tarfile.open(tp) as t:
+            t.extractall(".")
+        print("[shadow_sync] pulled legacy tarball stores:", int(os.path.getsize(tp) / 1e6), "MB")
+    # 2. the record — never overwrite a longer local record with a shorter remote one; fail closed if the remote can't be read
+    n_local = _chain_len("runs/signals/chain.txt"); n_remote = _remote_chain_len()
     if n_local and n_local >= n_remote:
         print(f"[shadow_sync] keeping the local record (chain {n_local} entries >= remote {n_remote}); no record overlay")
-        remote = set()
-    for local, repo_dir in RECORD:
-        if any(f.startswith(repo_dir + "/") for f in remote):
-            from huggingface_hub import snapshot_download
-            d = snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"], local_dir=_tmp("record-" + repo_dir.replace("/", "-")))
-            print(f"[shadow_sync] pulled record: {_mirror(os.path.join(d, *repo_dir.split('/')), local)} files -> {local}")
+    else:
+        for local, repo_dir in RECORD:
+            if any(f.startswith(repo_dir + "/") for f in remote):
+                d = _retry(lambda: snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"],
+                                                     local_dir=_tmp("record-" + repo_dir.replace("/", "-")), max_workers=4), "pull record")
+                print(f"[shadow_sync] pulled record: {_mirror(os.path.join(d, *repo_dir.split('/')), local)} files -> {local}")
+        if _chain_len("runs/signals/chain.txt") != n_remote:
+            raise SystemExit(f"[shadow_sync] pulled record is incomplete: chain {_chain_len('runs/signals/chain.txt')} != remote {n_remote}")
+    print(f"[shadow_sync] pull complete: chain {_chain_len('runs/signals/chain.txt')} entries")
 elif cmd == "push":
-    n_local = _chain_len("runs/signals/chain.txt"); n_remote = 0
-    for cand in ("shadow/signals/chain.txt", f"{PREFIX}/runs/signals/chain.txt"):
-        try:
-            n_remote = max(n_remote, _chain_len(hf_hub_download(REPO, cand, repo_type="dataset", token=tok, local_dir=_tmp("remote-chain-" + cand.replace("/", "-")))))
-        except Exception:  # noqa: BLE001
-            pass
+    n_local = _chain_len("runs/signals/chain.txt"); n_remote = _remote_chain_len()     # raises if the remote can't be read
     if n_local < n_remote:                                                    # never thin out a thicker remote record
         raise SystemExit(f"[shadow_sync] refusing to push: local chain has {n_local} entries, remote has {n_remote}")
     api.create_repo(REPO, repo_type="dataset", private=True, exist_ok=True)

@@ -37,6 +37,7 @@ jobs:
         run: pip install -r requirements-shadow.txt
 
       - name: pull state from the private HF dataset
+        id: pull
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/shadow_sync.py pull
@@ -45,7 +46,9 @@ jobs:
         run: bash scripts/nightly.sh
 
       - name: push state back
-        if: always()
+        # only after a complete pull: pushing on top of a failed pull overwrote the record with stale state (incident 14).
+        # It still runs when the nightly step fails, so a partially built day's record is not lost.
+        if: always() && steps.pull.outcome == 'success'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/shadow_sync.py push
