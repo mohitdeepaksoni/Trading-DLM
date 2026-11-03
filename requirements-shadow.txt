@@ -1,8 +1,10 @@
-numpy>=2.0
-polars>=1.30
-scipy>=1.13
-requests>=2.32
-huggingface_hub>=0.30
-opentimestamps-client>=0.7.2
-duckdb>=1.0
-pyarrow>=15
+# pinned 2026-11-03 (incident 13): an unpinned `duckdb>=1.0` let the runner pick up a release that broke store reads.
+# Bump deliberately, after a test run, never implicitly.
+numpy>=2.0,<3
+polars==1.36.1
+scipy>=1.13,<2
+requests>=2.32,<3
+huggingface_hub>=0.30,<1.0
+opentimestamps-client>=0.7.2,<0.8
+duckdb==1.4.5
+pyarrow==21.0.0

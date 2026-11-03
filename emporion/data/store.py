@@ -28,6 +28,14 @@ def _ts(x) -> dt.datetime:
     return dt.datetime.fromisoformat(str(x))
 
 
+def _to_polars(cur) -> pl.DataFrame:
+    """DuckDB result -> polars, independent of the DuckDB version. `.pl()` on the connection object disappeared in a recent
+    DuckDB release; GitHub runners install the newest version, so every store read failed there while the node (older,
+    already installed) worked — the runner's nightly jobs produced nothing from 2026-11-01 (incident 13). Arrow is the
+    stable interchange path in every 1.x release."""
+    return pl.from_arrow(cur.fetch_arrow_table())
+
+
 class BitemporalStore:
     def __init__(self, root: str):
         self.root = root
@@ -97,7 +105,7 @@ class BitemporalStore:
             QUALIFY row_number() OVER (PARTITION BY {k}, event_time ORDER BY knowledge_time DESC) = 1
             ORDER BY event_time, {k}
         """
-        return self._con.execute(sql).pl()
+        return _to_polars(self._con.execute(sql))
 
     def all_versions(self, table: str, columns: Optional[Sequence[str]] = None) -> pl.DataFrame:
         """Every revision of every row (no as-of resolution). Use when a script will resolve revisions itself at
@@ -109,7 +117,7 @@ class BitemporalStore:
         keys = self.keys(table)
         cols = "*" if columns is None else ", ".join(sorted(set(columns) | set(keys) | {"event_time", "knowledge_time"}))
         files = "[" + ", ".join(f"'{p}'" for p in parts) + "]"
-        return self._con.execute(f"SELECT {cols} FROM read_parquet({files}) ORDER BY event_time, knowledge_time").pl()
+        return _to_polars(self._con.execute(f"SELECT {cols} FROM read_parquet({files}) ORDER BY event_time, knowledge_time"))
 
     def live(self, table: str, lag: dt.timedelta = dt.timedelta(0), now: Optional[dt.datetime] = None,
              **kw) -> pl.DataFrame:
