@@ -24,6 +24,11 @@ WORK = tempfile.mkdtemp(prefix="shadow_sync-")
 atexit.register(lambda: shutil.rmtree(WORK, ignore_errors=True))
 
 
+# Downloaded dataset files live here between runs (the workflow restores and saves it with actions/cache), so a night downloads
+# only what changed. Without the variable it is a throwaway folder inside WORK.
+CACHE = os.environ.get("SHADOW_CACHE_DIR") or os.path.join(WORK, "cache")
+
+
 def _tmp(name):
     d = os.path.join(WORK, name)
     os.makedirs(d, exist_ok=True)
@@ -102,6 +107,60 @@ def _retry(fn, what, tries=4):
             raise
 
 
+def _fetch(prefix, dest, rate=3.0):
+    """Make `dest` an exact copy of the dataset folder `prefix` at one pinned commit, downloading ONLY files whose hash differs.
+    snapshot_download made several Hub API calls per file and started from scratch on every retry, so a 1,297-file pull hit the
+    rate limit two nights running (2026-11-04, incident 15). Here: one paginated tree listing gives every file's hash; files
+    already in `dest` (the Actions cache keeps it between runs) are verified and skipped; the rest are fetched one by one at
+    `rate` per second from the resolve endpoint, each 429 waited out and retried for that file alone; local files that are no
+    longer in the dataset are deleted, so a stale cache can never leak old data into the state. Returns (files, downloaded)."""
+    import hashlib, time, requests
+    sha = _retry(lambda: api.dataset_info(REPO).sha, "pin revision")
+    tree = _retry(lambda: [f for f in api.list_repo_tree(REPO, path_in_repo=prefix, recursive=True, repo_type="dataset",
+                                                          revision=sha) if hasattr(f, "blob_id")], "list " + prefix)
+
+    def ok(path, f):
+        if not os.path.exists(path) or os.path.getsize(path) != f.size:
+            return False
+        data = open(path, "rb").read()
+        if f.lfs:
+            return hashlib.sha256(data).hexdigest() == f.lfs.sha256
+        return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest() == f.blob_id
+
+    want = {}; got = 0; last = 0.0
+    for f in tree:
+        rel = os.path.relpath(f.path, prefix); path = os.path.join(dest, rel); want[os.path.normpath(path)] = 1
+        if ok(path, f):
+            continue
+        url = f"https://huggingface.co/datasets/{REPO}/resolve/{sha}/{f.path}"
+        for i in range(8):
+            time.sleep(max(0.0, last + 1.0 / rate - time.time())); last = time.time()
+            try:
+                r = requests.get(url, headers={"Authorization": f"Bearer {tok}"}, timeout=300)
+            except requests.RequestException as e:
+                r = None; err = str(e)[:80]
+            if r is not None and r.status_code == 200:
+                break
+            if r is not None and r.status_code not in (429, 500, 502, 503, 504):
+                r.raise_for_status()
+            wait = int(r.headers.get("Retry-After", 0)) if r is not None and r.headers.get("Retry-After", "").isdigit() else 0
+            wait = max(wait, 30 * (i + 1)); print(f"[shadow_sync] {f.path}: {r.status_code if r is not None else err} — waiting {wait}s")
+            time.sleep(wait)
+        else:
+            raise SystemExit(f"[shadow_sync] could not download {f.path} after 8 attempts")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path + ".part", "wb").write(r.content); os.replace(path + ".part", path)
+        if not ok(path, f):
+            raise SystemExit(f"[shadow_sync] hash mismatch after download: {f.path}")
+        got += 1
+    for root, _, fs in os.walk(dest):                                          # drop what the dataset no longer has
+        for x in fs:
+            q = os.path.normpath(os.path.join(root, x))
+            if q not in want:
+                os.remove(q)
+    return len(tree), got
+
+
 def _remote_chain_len():
     """Length of the published chain. 0 ONLY when the file genuinely does not exist; any other failure RAISES. The guard used to
     swallow every exception as "remote is empty", so a rate-limited read let a 152-link record overwrite the 212-link one
@@ -116,15 +175,13 @@ def _remote_chain_len():
 
 
 if cmd == "pull":
-    from huggingface_hub import snapshot_download
     remote = set(_retry(lambda: api.list_repo_files(REPO, repo_type="dataset"), "list files"))
     # 1. the stores. The file mirror is the source once it exists; the legacy tarball is ONLY a fallback for a dataset that
     #    has no mirror. Using the tarball as a base under the mirror (as before) also restored its 2026-10-13 runs/signals,
     #    which is how a failed pull turned into an old record being pushed (incident 14).
     if any(f.startswith(PREFIX + "/") for f in remote):
-        d = _retry(lambda: snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[PREFIX + "/**"],
-                                             local_dir=_tmp("stores-mirror"), max_workers=4), "pull store mirror")
-        print(f"[shadow_sync] pulled store mirror: {_mirror(os.path.join(d, *PREFIX.split('/')))} files from {PREFIX}/")
+        d = os.path.join(CACHE, PREFIX); n, got = _fetch(PREFIX, d)
+        print(f"[shadow_sync] pulled store mirror: {_mirror(d)} files from {PREFIX}/ ({got} downloaded, {n - got} reused from cache)")
         for a in ARCHIVED:                                                     # unpack archived directories
             if os.path.exists(a + ".tar.gz"):
                 with tarfile.open(a + ".tar.gz") as t:
@@ -142,9 +199,8 @@ if cmd == "pull":
     else:
         for local, repo_dir in RECORD:
             if any(f.startswith(repo_dir + "/") for f in remote):
-                d = _retry(lambda: snapshot_download(REPO, repo_type="dataset", token=tok, allow_patterns=[repo_dir + "/**"],
-                                                     local_dir=_tmp("record-" + repo_dir.replace("/", "-")), max_workers=4), "pull record")
-                print(f"[shadow_sync] pulled record: {_mirror(os.path.join(d, *repo_dir.split('/')), local)} files -> {local}")
+                d = os.path.join(CACHE, repo_dir); n, got = _fetch(repo_dir, d)
+                print(f"[shadow_sync] pulled record: {_mirror(d, local)} files -> {local} ({got} downloaded)")
         if _chain_len("runs/signals/chain.txt") != n_remote:
             raise SystemExit(f"[shadow_sync] pulled record is incomplete: chain {_chain_len('runs/signals/chain.txt')} != remote {n_remote}")
     print(f"[shadow_sync] pull complete: chain {_chain_len('runs/signals/chain.txt')} entries")

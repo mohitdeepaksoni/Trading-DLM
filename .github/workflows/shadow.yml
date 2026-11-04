@@ -6,8 +6,16 @@ on:
     # persist everything and the persistent node is retired. 01:30 UTC is after midnight UTC (files carry the new day, as
     # every file since 09-06 does) and well before the NSE open (03:45 UTC); 02:45 is a fallback for a dropped schedule.
     # nightly.sh is idempotent per UTC day, so a second fire — or a node run that already pushed the record — is a no-op.
+    #
+    # 2026-11-04 (incident 15): GitHub started the 01:30 and 02:45 triggers at 07:39 and 09:48 UTC — schedules are best-effort
+    # and can slip by hours. Six slots between 00:20 and 03:20 make it far likelier that one lands before the NSE open; the
+    # "already published today?" step below makes every slot after the first a one-request no-op.
+    - cron: "20 0 * * *"
+    - cron: "50 0 * * *"
     - cron: "30 1 * * *"
+    - cron: "10 2 * * *"
     - cron: "45 2 * * *"
+    - cron: "20 3 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -25,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EMPORION_DATA_REPO: mohitsatna/emporion-data
+      SHADOW_CACHE_DIR: ${{ github.workspace }}/../shadow-mirror
     timeout-minutes: 150     # Sunday runs carry the NSE fundamentals refresh (~60-90 min on the runner)
     steps:
       - uses: actions/checkout@v4
@@ -36,13 +45,42 @@ jobs:
       - name: install runner requirements
         run: pip install -r requirements-shadow.txt
 
+      - name: already published today?
+        # one request: if today's NSE file is on HF, an earlier slot (or a manual run) already did the night
+        id: gate
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          f="shadow/signals/nse-$(date -u +%Y-%m-%d).json"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -I -H "Authorization: Bearer $HF_TOKEN" \
+            "https://huggingface.co/datasets/$EMPORION_DATA_REPO/resolve/main/$f")
+          echo "$f -> HTTP $code"
+          if [ "$code" = "200" ] || [ "$code" = "302" ]; then echo "done=true" >> "$GITHUB_OUTPUT"; echo "already published; nothing to do"; fi
+
+      - name: restore the dataset cache (only changed files are downloaded)
+        if: steps.gate.outputs.done != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.SHADOW_CACHE_DIR }}
+          key: shadow-mirror-${{ github.run_id }}
+          restore-keys: shadow-mirror-
+
       - name: pull state from the private HF dataset
         id: pull
+        if: steps.gate.outputs.done != 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/shadow_sync.py pull
 
+      - name: save the dataset cache
+        if: steps.pull.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.SHADOW_CACHE_DIR }}
+          key: shadow-mirror-${{ github.run_id }}
+
       - name: nightly shadow job (signals, chain, ledger, OpenTimestamps, integrity)
+        if: steps.pull.outcome == 'success'
         run: bash scripts/nightly.sh
 
       - name: push state back
@@ -54,7 +92,7 @@ jobs:
         run: python scripts/shadow_sync.py push
 
       - name: keep the signal files as a run artifact
-        if: always()
+        if: always() && steps.gate.outputs.done != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: shadow-signals-${{ github.run_id }}
