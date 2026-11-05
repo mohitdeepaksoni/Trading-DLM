@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EMPORION_DATA_REPO: mohitsatna/emporion-data
-      SHADOW_CACHE_DIR: ${{ github.workspace }}/../shadow-mirror
+      SHADOW_CACHE_DIR: /home/runner/.cache/shadow-mirror   # inside $HOME; the "../" path made actions/cache fail to save (11-04, 11-05)
     timeout-minutes: 150     # Sunday runs carry the NSE fundamentals refresh (~60-90 min on the runner)
     steps:
       - uses: actions/checkout@v4
