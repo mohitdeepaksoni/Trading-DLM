@@ -40,7 +40,7 @@ def load_earnings(symbols: List[str]) -> pl.DataFrame:
     rows = []
     for s in symbols:
         try:
-            doc = json.loads(http_get(f"https://api.nasdaq.com/api/company/{s}/earnings-surprise", headers=HDR, retries=2, timeout=15))
+            doc = json.loads(http_get(f"https://api.nasdaq.com/api/company/{s}/earnings-surprise", headers=HDR, retries=2, timeout=15, client="requests"))
         except Exception:  # noqa: BLE001
             continue
         for r in ((doc.get("data") or {}).get("earningsSurpriseTable") or {}).get("rows") or []:
@@ -60,7 +60,7 @@ def load_dividends(symbols: List[str], assetclass: str = "stocks") -> pl.DataFra
     rows = []
     for s in symbols:
         try:
-            doc = json.loads(http_get(f"https://api.nasdaq.com/api/quote/{s}/dividends?assetclass={assetclass}", headers=HDR, retries=2, timeout=15))
+            doc = json.loads(http_get(f"https://api.nasdaq.com/api/quote/{s}/dividends?assetclass={assetclass}", headers=HDR, retries=2, timeout=15, client="requests"))
         except Exception:  # noqa: BLE001
             continue
         for r in ((doc.get("data") or {}).get("dividends") or {}).get("rows") or []:
@@ -77,7 +77,7 @@ def load_dividends(symbols: List[str], assetclass: str = "stocks") -> pl.DataFra
 @register("loader", "nasdaq_universe")
 def load_universe(limit: int = 10000) -> pl.DataFrame:
     """Screener snapshot: the sector/industry map for the exposure matrix (P3b) and the universe table."""
-    doc = json.loads(http_get(f"https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit={limit}&download=true", headers=HDR, retries=2, timeout=30))
+    doc = json.loads(http_get(f"https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit={limit}&download=true", headers=HDR, retries=2, timeout=30, client="requests"))
     d = doc.get("data") or {}
     rows = d.get("rows") or (d.get("table") or {}).get("rows") or []
     asof = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)

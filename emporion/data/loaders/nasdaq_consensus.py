@@ -29,7 +29,7 @@ def snapshot(symbols: List[str]) -> pl.DataFrame:
     rows = []
     for s in symbols:
         try:
-            doc = json.loads(http_get(f"https://api.nasdaq.com/api/quote/{s}/eps?assetclass=stocks", headers=HDR, retries=2, timeout=15))
+            doc = json.loads(http_get(f"https://api.nasdaq.com/api/quote/{s}/eps?assetclass=stocks", headers=HDR, retries=2, timeout=15, client="requests"))
         except Exception:  # noqa: BLE001
             continue
         for r in (doc.get("data") or {}).get("earningsPerShare") or []:
@@ -40,7 +40,7 @@ def snapshot(symbols: List[str]) -> pl.DataFrame:
             rows.append({"symbol": s, "event_time": now, "knowledge_time": now, "period_end": pe, "kind": r.get("type"),
                          "consensus_eps": float(r["consensus"]), "actual_eps": (float(r["earnings"]) if r.get("type") == "PreviousQuarter" else None)})
         try:
-            d2 = (json.loads(http_get(f"https://api.nasdaq.com/api/analyst/{s}/earnings-forecast", headers=HDR, retries=1, timeout=15)).get("data") or {})
+            d2 = (json.loads(http_get(f"https://api.nasdaq.com/api/analyst/{s}/earnings-forecast", headers=HDR, retries=1, timeout=15, client="requests")).get("data") or {})
             for r in (d2.get("yearlyForecast") or {}).get("rows") or []:
                 pe = _period_end(r.get("fiscalEnd", ""))
                 if pe is not None and r.get("consensusEPSForecast") not in (None, ""):

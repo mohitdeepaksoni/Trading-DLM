@@ -29,13 +29,18 @@ def load(symbols=None, start: str = "2010-01-01", assetclass: str = "etf",
     symbols = symbols or US_ETF_UNIVERSE
     end = dt.date.today().isoformat()
     frames = []
+    misses = 0                                                     # consecutive empty symbols
     for s in symbols:
+        # circuit breaker: from 2026-11-11 api.nasdaq.com stopped answering GitHub runner IPs; each symbol then burned
+        # ~3 min of timeouts and the whole nightly hit the 150-min limit before any market published (incident 16)
+        if misses >= 5 and not frames:
+            raise RuntimeError(f"nasdaq: first {misses} symbols returned nothing; source unreachable, giving up")
         url = (f"https://api.nasdaq.com/api/quote/{s}/historical?assetclass={assetclass}"
                f"&fromdate={start}&todate={end}&limit=99999")
         rows = []
         for attempt in range(3):                                   # empty/HTML bodies happen under load: retry, then skip
             try:
-                raw = http_get(url, headers=HDR, retries=2, timeout=30)
+                raw = http_get(url, headers=HDR, retries=2, timeout=30, client="requests")
                 doc = json.loads(raw) if raw.strip() else {}
                 rows = (doc.get("data") or {}).get("tradesTable", {}).get("rows") or []
                 if rows:
@@ -45,7 +50,9 @@ def load(symbols=None, start: str = "2010-01-01", assetclass: str = "etf",
             time.sleep(2.0 * (attempt + 1))
         if not rows:
             print(f"[nasdaq] no data for {s}, skipped", file=sys.stderr, flush=True)
+            misses += 1
             continue
+        misses = 0
         frames.append(pl.DataFrame({
             "symbol": [s] * len(rows),
             "event_time": [dt.datetime.strptime(r["date"], "%m/%d/%Y") for r in rows],

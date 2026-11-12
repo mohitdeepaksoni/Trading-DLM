@@ -12,13 +12,20 @@ BAR_SCHEMA = {"symbol": pl.Utf8, "event_time": pl.Datetime("us"), "knowledge_tim
               "volume": pl.Float64, "source": pl.Utf8}
 
 
-def http_get(url: str, headers=None, retries: int = 3, timeout: int = 30) -> bytes:
+def http_get(url: str, headers=None, retries: int = 3, timeout: int = 30, client: str = "urllib") -> bytes:
+    """client="requests" for hosts that refuse Python's urllib: from 2026-11-11 api.nasdaq.com answers urllib with 403
+    and the same request through `requests` with 200 (incident 16)."""
     hdr = {"User-Agent": "Mozilla/5.0 (Emporion research loader)"}
     if headers:
         hdr.update(headers)
     last = None
     for i in range(retries):
         try:
+            if client == "requests":
+                import requests  # noqa: PLC0415
+                r = requests.get(url, headers=hdr, timeout=(10, timeout))
+                r.raise_for_status()
+                return r.content
             req = urllib.request.Request(url, headers=hdr)
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read()
