@@ -34,7 +34,7 @@ jobs:
     env:
       EMPORION_DATA_REPO: mohitsatna/emporion-data
       SHADOW_CACHE_DIR: /home/runner/.cache/shadow-mirror   # inside $HOME; the "../" path made actions/cache fail to save (11-04, 11-05)
-    timeout-minutes: 150     # Sunday runs carry the NSE fundamentals refresh (~60-90 min on the runner)
+    timeout-minutes: 330     # Sundays add the NSE fundamentals refresh (~60-90 min); a daytime consensus pull took 72 min on 11-12 (public repo: minutes are free; GitHub max 360)
     steps:
       - uses: actions/checkout@v4
 
